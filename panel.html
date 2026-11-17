@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de carga · NexoRural</title>
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script>
+    // Sin sesión → volver al ingreso (antes de pintar la página).
+    if (!localStorage.getItem('nexorural.operador') && !sessionStorage.getItem('nexorural.operador')) {
+      location.replace('index.html');
+    }
+  </script>
+</head>
+<body class="app">
+
+  <!-- ===== Barra lateral ===== -->
+  <aside class="sidebar">
+    <a class="brand" href="panel.html">
+      <img src="assets/logo.svg" alt="" width="36" height="36">
+      <div>
+        <strong>NexoRural</strong>
+        <span>Control de carga</span>
+      </div>
+    </a>
+
+    <nav class="side-nav" aria-label="Secciones">
+      <p class="side-label">Operación</p>
+      <a href="#seccion-camion" class="is-active">
+        <svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+        Camión
+      </a>
+      <a href="#seccion-registro">
+        <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+        Registrar animal
+      </a>
+      <a href="#seccion-lista">
+        <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Animales cargados
+      </a>
+      <p class="side-label">Referencia</p>
+      <a href="#seccion-rangos">
+        <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+        Rangos de peso
+      </a>
+    </nav>
+
+    <div class="side-card">
+      <p class="side-card__title">Regla de seguridad</p>
+      <p>Un animal solo se acepta si <em>acumulado + nuevo ≤ capacidad</em>.</p>
+    </div>
+
+    <div class="side-user">
+      <span class="avatar" id="avatar">?</span>
+      <div>
+        <strong id="nombreOperador">Operador</strong>
+        <span>Capataz / encargado</span>
+      </div>
+      <button type="button" class="icon-btn" id="btnSalir" title="Cerrar sesión" aria-label="Cerrar sesión">
+        <svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===== Contenido ===== -->
+  <main class="main">
+
+    <header class="topbar">
+      <div>
+        <p class="topbar__date" id="fechaHoy"></p>
+        <h1 id="saludo">Control de carga ganadera</h1>
+        <p class="topbar__sub">Registrá cada animal antes de subirlo. El sistema bloquea cualquier ingreso que supere la capacidad del camión.</p>
+      </div>
+      <div class="topbar__actions">
+        <span class="chip chip--mono" id="chipPatente" hidden></span>
+        <span class="status-pill" id="estadoPill" data-nivel="vacio">Sin configurar</span>
+      </div>
+    </header>
+
+    <!-- Indicadores (RF-07) -->
+    <section class="kpis" aria-label="Indicadores de carga">
+      <article class="kpi">
+        <p class="kpi__label">Peso cargado</p>
+        <p class="kpi__value mono" id="kpiCargado">0 kg</p>
+        <p class="kpi__hint" id="kpiCargadoHint">0 % de la capacidad</p>
+      </article>
+      <article class="kpi">
+        <p class="kpi__label">Capacidad máxima</p>
+        <p class="kpi__value mono" id="kpiCapacidad">—</p>
+        <p class="kpi__hint">Configurada por el usuario</p>
+      </article>
+      <article class="kpi kpi--accent" id="kpiDisponibleCard">
+        <p class="kpi__label">Disponible</p>
+        <p class="kpi__value mono" id="kpiDisponible">—</p>
+        <p class="kpi__hint">Margen restante</p>
+      </article>
+      <article class="kpi">
+        <p class="kpi__label">Animales</p>
+        <p class="kpi__value mono" id="kpiCantidad">0</p>
+        <p class="kpi__hint" id="kpiDesglose">Sin registros</p>
+      </article>
+    </section>
+
+    <div class="grid">
+
+      <!-- Camión + barra de progreso -->
+      <section class="card card--truck area-camion" id="seccion-camion">
+        <div class="card__head">
+          <div>
+            <h2>Estado del camión</h2>
+            <p class="muted">Cada bloque es un animal, proporcional a su peso.</p>
+          </div>
+          <div class="legend">
+            <span><i class="sw sw--vaca"></i>Vaca</span>
+            <span><i class="sw sw--toro"></i>Toro</span>
+            <span><i class="sw sw--oveja"></i>Oveja</span>
+          </div>
+        </div>
+
+        <div class="truck-wrap">
+          <svg class="truck" viewBox="0 0 900 290" role="img" aria-labelledby="truckTitle">
+            <title id="truckTitle">Representación de la carga del camión</title>
+            <defs>
+              <clipPath id="clipCaja"><rect x="34" y="34" width="572" height="164" rx="6"/></clipPath>
+              <pattern id="rejilla" width="24" height="24" patternUnits="userSpaceOnUse">
+                <path d="M24 0H0V24" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+              </pattern>
+            </defs>
+            <!-- chasis -->
+            <rect x="40" y="214" width="800" height="12" rx="4" fill="#334155"/>
+            <!-- caja / jaula -->
+            <rect x="20" y="20" width="600" height="192" rx="12" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="3"/>
+            <rect x="34" y="34" width="572" height="164" rx="6" fill="url(#rejilla)"/>
+            <g id="truckSegments" clip-path="url(#clipCaja)"></g>
+            <!-- listones de la jaula -->
+            <g stroke="#CBD5E1" stroke-width="2" opacity=".9">
+              <line x1="20" y1="76" x2="620" y2="76"/>
+              <line x1="20" y1="118" x2="620" y2="118"/>
+              <line x1="20" y1="160" x2="620" y2="160"/>
+            </g>
+            <text id="truckPct" x="320" y="128" text-anchor="middle" class="truck__pct">0%</text>
+            <!-- cabina -->
+            <path d="M636 70h118c14 0 24 6 31 18l43 64c6 9 8 17 8 27v35H636z" fill="#0F172A"/>
+            <path d="M664 88h82c7 0 12 3 16 9l30 45h-128z" fill="#93C5FD" opacity=".85"/>
+            <rect x="636" y="186" width="200" height="8" fill="#059669"/>
+            <rect x="820" y="196" width="22" height="14" rx="3" fill="#F59E0B"/>
+            <!-- ruedas -->
+            <g class="wheel"><circle cx="120" cy="236" r="28"/><circle cx="120" cy="236" r="11"/></g>
+            <g class="wheel"><circle cx="190" cy="236" r="28"/><circle cx="190" cy="236" r="11"/></g>
+            <g class="wheel"><circle cx="500" cy="236" r="28"/><circle cx="500" cy="236" r="11"/></g>
+            <g class="wheel"><circle cx="570" cy="236" r="28"/><circle cx="570" cy="236" r="11"/></g>
+            <g class="wheel"><circle cx="760" cy="236" r="28"/><circle cx="760" cy="236" r="11"/></g>
+          </svg>
+        </div>
+
+        <div class="progress-block">
+          <div class="progress-meta">
+            <span>Capacidad utilizada</span>
+            <strong class="mono" id="progresoTexto">0 %</strong>
+          </div>
+          <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="progreso">
+            <div class="progress__bar" id="progresoBarra"></div>
+            <span class="progress__mark" style="left:85%" title="Zona de atención (85 %)"></span>
+          </div>
+          <div class="progress-scale mono"><span>0</span><span id="escalaMedio">—</span><span id="escalaMax">—</span></div>
+        </div>
+      </section>
+
+      <!-- Configuración + registro -->
+      <div class="stack area-form">
+        <section class="card" id="seccion-config">
+          <div class="card__head">
+            <h2>1. Configurar camión</h2>
+            <span class="step-badge" id="configBadge">Pendiente</span>
+          </div>
+          <form id="formConfig" class="form" novalidate>
+            <div class="field-row">
+              <label class="field">
+                <span>Capacidad máxima (kg) <b class="req">*</b></span>
+                <input type="text" inputmode="decimal" id="capacidad" placeholder="Ej: 15.000" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Patente <small>(opcional)</small></span>
+                <input type="text" id="patente" class="mono upper" placeholder="AB 123 CD" maxlength="10" autocomplete="off">
+              </label>
+            </div>
+            <p class="field-help" id="capacidadAyuda">Dato obligatorio: la consigna no fija la capacidad, la define el usuario.</p>
+            <div class="btn-row">
+              <button type="submit" class="btn btn--primary" id="btnConfig">Iniciar carga</button>
+              <button type="button" class="btn btn--ghost" id="btnReiniciar" hidden>Reiniciar carga</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="card" id="seccion-registro">
+          <div class="card__head">
+            <h2>2. Registrar animal</h2>
+            <span class="muted mono" id="disponibleMini"></span>
+          </div>
+          <form id="formAnimal" class="form" novalidate>
+            <fieldset class="species" id="especies">
+              <legend>Tipo de animal <b class="req">*</b></legend>
+              <label class="species__opt">
+                <input type="radio" name="tipo" value="vaca">
+                <span><strong>Vaca</strong><small class="mono">500–800 kg</small></span>
+              </label>
+              <label class="species__opt">
+                <input type="radio" name="tipo" value="toro">
+                <span><strong>Toro</strong><small class="mono">600–1.100 kg</small></span>
+              </label>
+              <label class="species__opt">
+                <input type="radio" name="tipo" value="oveja">
+                <span><strong>Oveja</strong><small class="mono">35–180 kg</small></span>
+              </label>
+            </fieldset>
+            <div class="field-row">
+              <label class="field">
+                <span>Peso real medido (kg) <b class="req">*</b></span>
+                <input type="text" inputmode="decimal" id="peso" placeholder="Ej: 650,5" autocomplete="off">
+              </label>
+              <label class="field">
+                <span>Caravana <small>(opcional)</small></span>
+                <input type="text" id="caravana" class="mono upper" placeholder="AR 0123 4567" maxlength="20" autocomplete="off">
+              </label>
+            </div>
+            <p class="field-help mono" id="pesoPreview">Usá coma para decimales: 650,5 kg</p>
+
+            <div class="alert" id="mensaje" role="status" aria-live="polite" hidden></div>
+
+            <div class="btn-row">
+              <button type="submit" class="btn btn--primary btn--lg" id="btnRegistrar">Registrar animal</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <!-- Listado (RF-08 / RF-09) -->
+      <section class="card area-lista" id="seccion-lista">
+        <div class="card__head">
+          <div>
+            <h2>Animales cargados</h2>
+            <p class="muted" id="listaResumen">Todavía no hay animales registrados.</p>
+          </div>
+          <button type="button" class="btn btn--ghost btn--sm" id="btnImprimir">
+            <svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>
+            Imprimir planilla
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>N.º</th>
+                <th>Tipo</th>
+                <th>Caravana</th>
+                <th class="num">Peso</th>
+                <th class="num">Acumulado</th>
+                <th>Hora</th>
+                <th class="actions"><span class="sr-only">Acción</span></th>
+              </tr>
+            </thead>
+            <tbody id="tablaAnimales"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3">Total cargado</td>
+                <td class="num mono" id="totalTabla">0 kg</td>
+                <td colspan="3"></td>
+              </tr>
+            </tfoot>
+          </table>
+          <div class="empty" id="listaVacia">
+            <svg viewBox="0 0 24 24"><path d="M3 7h11v9H3zM14 10h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>
+            <p>El camión está vacío. Registrá el primer animal para comenzar.</p>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Rangos orientativos -->
+    <section class="card" id="seccion-rangos">
+      <div class="card__head">
+        <div>
+          <h2>Rangos orientativos de peso</h2>
+          <p class="muted">Solo sirven para detectar errores de tipeo. No reemplazan el peso real ni son límites rígidos.</p>
+        </div>
+      </div>
+      <div class="ranges">
+        <div class="range"><strong>Vaca adulta</strong><span class="mono">500 – 800 kg</span><div class="range__bar"><i style="left:31.25%;width:18.75%"></i></div></div>
+        <div class="range"><strong>Toro adulto</strong><span class="mono">600 – 1.100 kg</span><div class="range__bar"><i style="left:37.5%;width:31.25%"></i></div></div>
+        <div class="range"><strong>Oveja adulta</strong><span class="mono">35 – 180 kg</span><div class="range__bar"><i style="left:2.19%;width:9.06%"></i></div></div>
+      </div>
+      <p class="range-scale mono"><span>0</span><span>400</span><span>800</span><span>1.200</span><span>1.600 kg</span></p>
+    </section>
+
+    <footer class="footer">
+      NexoRural v1.0 · Desarrollado por <strong>AGO Soluciones</strong>
+    </footer>
+  </main>
+
+  <!-- Planilla de impresión -->
+  <div class="print-sheet" id="planilla" aria-hidden="true"></div>
+
+  <script src="js/logic.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
