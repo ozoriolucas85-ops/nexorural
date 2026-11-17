@@ -28,6 +28,34 @@ La app detecta sola el modo y lo muestra arriba a la derecha: **Conectado** o **
 
 Si MySQL tiene contraseña o usás otro servidor, cambiá los datos en `api/config.php`.
 
+> **Alternativa al paso 1 (la que usamos en desarrollo):** en lugar de copiar, crear un *enlace* para que Apache sirva directamente la carpeta del repositorio y no haya dos copias. En PowerShell:
+> `New-Item -ItemType Junction -Path C:\xampp\htdocs\nexorural -Target "<carpeta del repositorio>"`
+> El `.htaccess` de la raíz bloquea `.git` y `scripts/` para que no se vean desde la web.
+
+### Usar desde el celular
+
+1. En la PC con XAMPP ejecutá **una sola vez** `scripts\habilitar-celulares.bat` (doble clic → aceptar el permiso de administrador). Agrega una regla al Firewall de Windows que deja entrar a Apache **solo desde el wifi local**.
+2. Como administrador, entrá a **Usuarios**: arriba aparece la dirección para celulares (ej. `http://192.168.1.18/nexorural/`) con botones para copiarla o mandarla por WhatsApp.
+3. En el celular (conectado al **mismo wifi**), abrí esa dirección. Desde el menú del navegador se puede **"Agregar a la pantalla de inicio"** y queda como una app con su ícono.
+
+En el celular, con una carga en curso, lo primero que aparece es el formulario de **Registrar animal**.
+
+> La IP de la PC la asigna el router y puede cambiar. Si un día el celular no entra, revisá la dirección en **Usuarios**. Para que no cambie, se puede reservar la IP en el router.
+
+### Respaldos de la base de datos
+
+| Script | Qué hace |
+|---|---|
+| `scripts\respaldo.bat` | Crea un respaldo completo en `Documentos\NexoRural-respaldos\` y borra los de más de 30 días |
+| `scripts\programar-respaldo.bat` | Programa el respaldo **todos los días a las 20:00** (si la PC estaba apagada, lo hace al encenderla) |
+| `scripts\restaurar-respaldo.bat` | Restaura un respaldo. Pide confirmar con **SI** y antes guarda una copia del estado actual |
+
+Copiá la carpeta `Documentos\NexoRural-respaldos` a un pendrive o a Google Drive/OneDrive cada tanto: si se rompe la PC, el respaldo tiene que estar en otro lado.
+
+### Funciona sin internet
+
+Las tipografías están incluidas en el proyecto (`assets/fonts/`, licencia SIL OFL): la app no necesita conexión a internet, solo el wifi local.
+
 ## Cómo usarla
 
 1. **Ingresar** con tu usuario y contraseña.
@@ -100,7 +128,10 @@ nexorural/
 │   ├── carga.php           Carga en curso (iniciar, registrar, eliminar, cerrar…)
 │   ├── historial.php       Listado y detalle de cargas
 │   └── usuarios.php        Alta, activar/desactivar, cambiar contraseña
-├── assets/                 Logo y fondo del ingreso
+├── manifest.webmanifest    Para instalarla en el celular ("Agregar a pantalla de inicio")
+├── .htaccess               Bloquea .git y scripts/ desde la web
+├── assets/                 Logo, íconos, fondo del ingreso y tipografías (fonts/)
+├── scripts/                Windows: habilitar celulares, respaldo, programar y restaurar
 ├── database/
 │   ├── nexorural_estructura.sql   Estructura para phpMyAdmin
 │   └── datos_iniciales.sql        Catálogo de especies (opcional)
@@ -123,7 +154,7 @@ Todas las respuestas son JSON (`{ "ok": true, ... }` o `{ "ok": false, "mensaje"
 | `auth.php` | `estado` (GET), `instalar`, `login`, `logout` |
 | `carga.php` | `actual` (GET), `iniciar`, `capacidad`, `registrar`, `eliminar`, `restaurar`, `rechazo`, `cerrar`, `cancelar` |
 | `historial.php` | `listar` (GET, filtros `estado`, `desde`, `hasta`), `detalle` (GET, `id`) |
-| `usuarios.php` | `listar` (GET), `crear`, `activo`, `clave` — solo administradores |
+| `usuarios.php` | `listar` (GET), `red` (GET, dirección para celulares), `crear`, `activo`, `clave` — solo administradores |
 
 ## Pruebas
 

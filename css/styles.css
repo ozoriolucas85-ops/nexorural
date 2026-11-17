@@ -520,8 +520,10 @@ svg { display: block; }
    Responsive (computadora, tablet y celular)
    ========================================================= */
 @media (max-width: 1200px) {
-  .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "camion" "form" "lista"; }
+  .grid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "form" "camion" "lista"; }
   .area-form { position: static; }
+  /* Con una carga en curso, en celular/tablet lo primero es registrar animales. */
+  .hay-carga #seccion-registro { order: -1; }
 }
 
 @media (max-width: 1024px) {
@@ -670,3 +672,15 @@ select.select, .field select {
   .detail-grid { grid-template-columns: repeat(2, 1fr); }
   .filters .field { min-width: 0; flex: 1 1 140px; }
 }
+
+/* Acceso desde celulares (página Usuarios) */
+.acceso { background: linear-gradient(135deg, var(--emerald-50), #fff 60%); border-color: var(--emerald-100); }
+.acceso h2 { margin-bottom: 4px; }
+.acceso__url {
+  margin: 14px 0; padding: 14px 18px; border-radius: var(--radius-sm);
+  background: var(--slate-900); color: #fff; font-size: 1.35rem; font-weight: 600;
+  word-break: break-all; user-select: all;
+}
+.hay-carga .paso { display: none; }
+.acceso .field-help { margin-top: 12px; }
+@media (max-width: 820px) { .solo-escritorio { display: none; } }

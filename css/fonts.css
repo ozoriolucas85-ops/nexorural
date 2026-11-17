@@ -1,0 +1,16 @@
+/* Tipografías incluidas en el proyecto: funcionan sin internet.
+   Licencia SIL Open Font License 1.1 (ver assets/fonts/OFL-*.txt). */
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('../assets/fonts/plus-jakarta-sans-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Roboto Mono';
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: swap;
+  src: url('../assets/fonts/roboto-mono-latin.woff2') format('woff2');
+}

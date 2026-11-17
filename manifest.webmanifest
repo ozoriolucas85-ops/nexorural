@@ -1,0 +1,17 @@
+{
+  "name": "NexoRural · Control de carga ganadera",
+  "short_name": "NexoRural",
+  "description": "Registro de animales y control de carga del camión. AGO Soluciones.",
+  "lang": "es-AR",
+  "start_url": "./panel.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0F172A",
+  "theme_color": "#0F172A",
+  "icons": [
+    { "src": "assets/icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" },
+    { "src": "assets/logo.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

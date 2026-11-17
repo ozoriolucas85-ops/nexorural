@@ -351,6 +351,7 @@
     var e = estado();
     var s = L.resumen(e);
     var configurado = !!carga;
+    document.body.classList.toggle('hay-carga', configurado);
 
     // Indicadores
     $('kpiCargado').textContent = kg(s.cargado);

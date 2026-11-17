@@ -22,7 +22,33 @@
     }
     $('contenidoUsuarios').hidden = false;
     cargar();
+    mostrarAccesoCelular();
   });
+
+  function mostrarAccesoCelular() {
+    store.direccionesRed().then(function (urls) {
+      if (!urls || !urls.length) return;
+      var url = urls[0];
+      $('urlCelular').textContent = url;
+      $('btnWhatsapp').href = 'https://wa.me/?text=' + encodeURIComponent('Entrá a NexoRural desde el celular (conectado al wifi del campo): ' + url);
+      $('accesoCelular').hidden = false;
+      $('btnCopiarUrl').addEventListener('click', function () {
+        var b = this;
+        var listo = function () { b.textContent = '¡Copiada!'; setTimeout(function () { b.textContent = 'Copiar dirección'; }, 2000); };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(url).then(listo);
+        } else {
+          var t = document.createElement('textarea');
+          t.value = url;
+          document.body.appendChild(t);
+          t.select();
+          document.execCommand('copy');
+          t.remove();
+          listo();
+        }
+      });
+    }, function () { /* sin red: no se muestra la tarjeta */ });
+  }
 
   function aviso(titulo, texto) {
     $('aviso').innerHTML = '<strong>' + esc(titulo) + '</strong>' + esc(texto);

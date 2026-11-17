@@ -1,0 +1,13 @@
+# NexoRural — reglas de Apache para la carpeta del proyecto
+# No mostrar listados de carpetas.
+Options -Indexes
+
+# Ocultar Git, archivos ocultos y los scripts de Windows (no son parte de la web).
+RedirectMatch 404 /\.git(/|$)
+RedirectMatch 404 /scripts/
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Tipo correcto para el manifiesto de la app.
+AddType application/manifest+json .webmanifest

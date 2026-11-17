@@ -59,6 +59,19 @@ switch (accion()) {
         if ($st->rowCount() === 0) fallar('Usuario no encontrado', 404, 'no_encontrado');
         responder(['ok' => true]);
 
+    case 'red':
+        // Direcciones para entrar desde celulares conectados al mismo wifi.
+        $ips = array_values(array_filter(gethostbynamel(gethostname()) ?: [], function ($ip) {
+            return (bool)preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/', $ip);
+        }));
+        $puerto = (int)($_SERVER['SERVER_PORT'] ?? 80);
+        $esquema = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $ruta = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/nexorural/api/x.php'))), '/') . '/';
+        $porDefecto = ($esquema === 'http' && $puerto === 80) || ($esquema === 'https' && $puerto === 443);
+        responder(['ok' => true, 'urls' => array_map(function ($ip) use ($esquema, $puerto, $ruta, $porDefecto) {
+            return $esquema . '://' . $ip . ($porDefecto ? '' : ':' . $puerto) . $ruta;
+        }, $ips)]);
+
     default:
         fallar('Acción desconocida', 404, 'accion');
 }
