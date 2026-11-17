@@ -488,19 +488,4 @@
     UI.descargarCSV('carga-' + (carga.patente || carga.id) + '.csv', UI.ENCABEZADOS_ANIMALES, UI.csvDeCarga(carga));
   });
 
-  /* ---------- Navegación lateral: resaltar sección visible ---------- */
-  var links = document.querySelectorAll('.side-nav a[href^="#"]');
-  if ('IntersectionObserver' in window) {
-    var obs = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (!en.isIntersecting) return;
-        links.forEach(function (l) {
-          l.classList.toggle('is-active', l.getAttribute('href') === '#' + en.target.id);
-        });
-      });
-    }, { rootMargin: '-40% 0px -55% 0px' });
-    ['seccion-camion', 'seccion-registro', 'seccion-lista', 'seccion-rangos'].forEach(function (id) {
-      obs.observe($(id));
-    });
-  }
 })();
