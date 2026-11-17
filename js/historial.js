@@ -83,7 +83,7 @@
 
     var filas = c.animales.map(function (a, i) {
       return '<tr><td class="mono">' + String(i + 1).padStart(2, '0') + '</td>' +
-        '<td><span class="tag tag--' + esc(a.tipo) + '">' + esc(L.nombreTipo(a.tipo)) + '</span></td>' +
+        '<td>' + UI.tagTipo(a.tipo) + '</td>' +
         '<td class="mono">' + (esc(a.caravana) || '<span class="muted">—</span>') + '</td>' +
         '<td class="mono muted">' + UI.hora(a.hora) + '</td>' +
         '<td class="num mono">' + kg(a.peso) + '</td></tr>';

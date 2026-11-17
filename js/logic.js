@@ -122,7 +122,7 @@
     var peso = parsearPeso(datos.peso);
     // Redondear ANTES de validar: "0,001" queda en 0 y debe rechazarse.
     if (!isNaN(peso)) peso = redondear(peso);
-    var tipoValido = !!(datos.tipo && TIPOS_ANIMAL[datos.tipo]);
+    var tipoValido = !!(datos.tipo && TIPOS_ANIMAL[datos.tipo] && TIPOS_ANIMAL[datos.tipo].activo !== false);
 
     if (!estado.capacidad || estado.capacidad <= 0) {
       return { ok: false, motivo: 'sin_capacidad', mensaje: 'Configure primero la capacidad máxima del camión' };
@@ -169,6 +169,35 @@
       disponible: redondear(estado.capacidad - propuesto),
       advertenciaRango: fueraDeRango(datos.tipo, peso)
     };
+  }
+
+  /**
+   * Reemplaza el catálogo de categorías (viene de la base de datos).
+   * lista = [{ codigo, nombre, min, max, activo }]
+   * Se modifica el MISMO objeto TIPOS_ANIMAL para que todas las referencias lo vean.
+   */
+  function configurarTipos(lista) {
+    if (!Array.isArray(lista) || !lista.length) return;
+    Object.keys(TIPOS_ANIMAL).forEach(function (k) { delete TIPOS_ANIMAL[k]; });
+    lista.forEach(function (t) {
+      if (!t || !t.codigo) return;
+      TIPOS_ANIMAL[t.codigo] = { nombre: t.nombre, min: Number(t.min), max: Number(t.max), activo: t.activo !== false };
+    });
+  }
+
+  /** Categorías que se pueden elegir al registrar: [{ codigo, nombre, min, max }] */
+  function tiposActivos() {
+    return Object.keys(TIPOS_ANIMAL).filter(function (k) { return TIPOS_ANIMAL[k].activo !== false; })
+      .map(function (k) { var t = TIPOS_ANIMAL[k]; return { codigo: k, nombre: t.nombre, min: t.min, max: t.max }; });
+  }
+
+  /** Plural en minúscula: Vaca → vacas, Toro → toros, Ternero → terneros, Buey → bueyes */
+  function plural(nombre) {
+    var n = String(nombre || '').toLowerCase();
+    if (!n) return n;
+    if (/[aeiouáéó]$/.test(n)) return n + 's';
+    if (/z$/.test(n)) return n.slice(0, -1) + 'ces';
+    return n + 'es';
   }
 
   /** Nombre visible de un tipo; si no está en el catálogo, muestra el código. */
@@ -257,6 +286,9 @@
     MENSAJES: MENSAJES,
     LIMITES: LIMITES,
     nombreTipo: nombreTipo,
+    configurarTipos: configurarTipos,
+    tiposActivos: tiposActivos,
+    plural: plural,
     normalizarEstado: normalizarEstado,
     redondear: redondear,
     TIPOS_ANIMAL: TIPOS_ANIMAL,

@@ -3,9 +3,10 @@
  * NexoRural — Carga en curso del usuario
  *
  *  GET  carga.php?accion=actual
- *  POST carga.php?accion=iniciar     { capacidad, patente }
+ *  POST carga.php?accion=iniciar     { capacidad, patente, camionId? }
  *  POST carga.php?accion=capacidad   { capacidad, patente }
  *  POST carga.php?accion=registrar   { tipo, peso, caravana, fueraDeRango }
+ *  POST carga.php?accion=editar      { id, tipo, peso, caravana, fueraDeRango }
  *  POST carga.php?accion=eliminar    { id }
  *  POST carga.php?accion=restaurar   { id }
  *  POST carga.php?accion=rechazo     { tipo, peso, motivo }   (auditoría)
@@ -30,8 +31,17 @@ switch (accion()) {
         $cap = validarCapacidad($d['capacidad'] ?? null);
         $patente = limpiarPatente($d['patente'] ?? null);
         if (cargaAbiertaId($yo['id'])) fallar('Ya tenés una carga abierta. Cerrala o cancelala primero.', 409, 'ya_abierta');
-        $pdo->prepare('INSERT INTO cargas (usuario_id, patente, capacidad_maxima_kg) VALUES (?, ?, ?)')
-            ->execute([$yo['id'], $patente, $cap]);
+        $camionId = null;
+        if (!empty($d['camionId'])) {
+            $st = $pdo->prepare('SELECT id, patente FROM camiones WHERE id = ? AND activo = 1');
+            $st->execute([(int)$d['camionId']]);
+            $cm = $st->fetch();
+            if (!$cm) fallar('Ese camión ya no está disponible.', 409, 'camion');
+            $camionId = (int)$cm['id'];
+            $patente = $cm['patente'];
+        }
+        $pdo->prepare('INSERT INTO cargas (usuario_id, camion_id, patente, capacidad_maxima_kg) VALUES (?, ?, ?, ?)')
+            ->execute([$yo['id'], $camionId, $patente, $cap]);
         responder(['ok' => true, 'carga' => cargaComoJson((int)$pdo->lastInsertId())]);
 
     case 'capacidad':
@@ -51,28 +61,7 @@ switch (accion()) {
         $d = entrada();
         $id = exigirCargaAbierta($yo['id']);
 
-        $tipo = (string)($d['tipo'] ?? '');
-        $peso = numero($d['peso'] ?? null);
-        $peso = $peso === null ? null : redondear($peso);
-        $st = $pdo->prepare('SELECT id, peso_min_ref_kg, peso_max_ref_kg FROM tipos_animal WHERE codigo = ? AND activo = 1');
-        $st->execute([$tipo]);
-        $t = $st->fetch();
-
-        if (!$t || $peso === null || $peso <= 0) {
-            registrarRechazo($id, $t ? (int)$t['id'] : null, (string)($d['peso'] ?? ''), 'dato_invalido');
-            fallar('Ingrese datos válidos', 422, 'invalido');
-        }
-        if ($peso > $CONFIG['peso_animal_max_kg']) {
-            registrarRechazo($id, (int)$t['id'], (string)$peso, 'dato_invalido');
-            fallar('Ingrese datos válidos', 422, 'invalido', [
-                'detalle' => 'Ningún animal puede pesar más de ' . number_format($CONFIG['peso_animal_max_kg'], 0, ',', '.') . ' kg.',
-            ]);
-        }
-        $fuera = $peso < (float)$t['peso_min_ref_kg'] || $peso > (float)$t['peso_max_ref_kg'];
-        if ($fuera && empty($d['fueraDeRango'])) {
-            fallar('El peso está fuera del rango orientativo: confirmá el dato.', 422, 'confirmar_rango');
-        }
-        $caravana = textoCorto(isset($d['caravana']) ? strtoupper((string)$d['caravana']) : null, 20);
+        [$t, $peso, $fuera, $caravana] = validarAnimal($d, $id);
 
         // Transacción + bloqueo de la fila de la carga: si dos celulares registran a la vez,
         // el segundo espera y ve el total actualizado. Nunca se pasa la capacidad.
@@ -104,6 +93,45 @@ switch (accion()) {
             throw $e;
         }
         responder(['ok' => true, 'id' => (string)$nuevo, 'carga' => cargaComoJson($id)]);
+
+    case 'editar':
+        // Corregir tipo, peso o caravana de un animal ya registrado.
+        $d = entrada();
+        $id = exigirCargaAbierta($yo['id']);
+        $animal = (int)($d['id'] ?? 0);
+        [$t, $peso, $fuera, $caravana] = validarAnimal($d, null);
+
+        $pdo->beginTransaction();
+        $c = $pdo->prepare('SELECT capacidad_maxima_kg FROM cargas WHERE id = ? FOR UPDATE');
+        $c->execute([$id]);
+        $cap = (float)$c->fetchColumn();
+        $a = $pdo->prepare('SELECT peso_kg FROM animales_carga WHERE id = ? AND carga_id = ? AND eliminado = 0');
+        $a->execute([$animal, $id]);
+        $anterior = $a->fetchColumn();
+        if ($anterior === false) {
+            $pdo->rollBack();
+            fallar('No se encontró ese registro en la carga actual.', 404, 'no_encontrado');
+        }
+        $propuesto = redondear(acumulado($id) - (float)$anterior + $peso);
+        if ($propuesto > $cap) {
+            $pdo->rollBack();
+            fallar('Capacidad máxima superada', 409, 'excede', [
+                'propuesto' => $propuesto,
+                'exceso'    => redondear($propuesto - $cap),
+                'carga'     => cargaComoJson($id),
+            ]);
+        }
+        try {
+            $pdo->prepare('UPDATE animales_carga SET tipo_animal_id = ?, peso_kg = ?, caravana = ?, fuera_de_rango = ?
+                           WHERE id = ? AND carga_id = ?')
+                ->execute([$t['id'], $peso, $caravana, $fuera ? 1 : 0, $animal, $id]);
+            $pdo->commit();
+        } catch (PDOException $e) {
+            $pdo->rollBack();
+            if ($m = mensajeTrigger($e)) fallar($m, 409, 'excede', ['carga' => cargaComoJson($id)]);
+            throw $e;
+        }
+        responder(['ok' => true, 'carga' => cargaComoJson($id)]);
 
     case 'eliminar':
     case 'restaurar':

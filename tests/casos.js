@@ -155,6 +155,42 @@
           L.normalizarEstado('basura').animales.length === 0 &&
           L.normalizarEstado(null).capacidad === 0;
       }
+    },
+    {
+      nombre: 'Catálogo configurable: nueva categoría "Ternero" se puede registrar; una inactiva no',
+      fn: function () {
+        var original = L.tiposActivos();
+        L.configurarTipos([
+          { codigo: 'vaca', nombre: 'Vaca', min: 500, max: 800, activo: true },
+          { codigo: 'ternero', nombre: 'Ternero', min: 80, max: 250, activo: true },
+          { codigo: 'oveja', nombre: 'Oveja', min: 35, max: 180, activo: false }
+        ]);
+        var e = estadoCon(5000, []);
+        var ok = L.evaluarRegistro(e, { tipo: 'ternero', peso: '150' }).ok &&
+          L.evaluarRegistro(e, { tipo: 'ternero', peso: '400' }).advertenciaRango === true &&
+          !L.evaluarRegistro(e, { tipo: 'oveja', peso: '60' }).ok &&
+          L.nombreTipo('oveja') === 'Oveja' &&
+          L.tiposActivos().map(function (t) { return t.codigo; }).join(',') === 'vaca,ternero';
+        L.configurarTipos(original.map(function (t) { t.activo = true; return t; }));
+        return ok && L.tiposActivos().length === 3;
+      }
+    },
+    {
+      nombre: 'Plurales: vaca→vacas, toro→toros, ternero→terneros, buey→bueyes',
+      fn: function () {
+        return L.plural('Vaca') === 'vacas' && L.plural('Toro') === 'toros' &&
+          L.plural('Ternero') === 'terneros' && L.plural('Buey') === 'bueyes';
+      }
+    },
+    {
+      nombre: 'Corregir un animal: se valida contra el total SIN su peso anterior',
+      fn: function () {
+        // Capacidad 5.000, cargado 4.800 (4.000 + 800). Cambiar el de 800 a 1.000 → 5.000: entra justo.
+        var e = estadoCon(5000, [800, 800, 800, 800, 800, 800]);
+        var sinEse = { capacidad: e.capacidad, animales: e.animales.filter(function (a) { return a.id !== 'a5'; }) };
+        return L.evaluarRegistro(sinEse, { tipo: 'toro', peso: '1.000' }).ok &&
+          !L.evaluarRegistro(sinEse, { tipo: 'toro', peso: '1.000,01' }).ok;
+      }
     }
   ];
 

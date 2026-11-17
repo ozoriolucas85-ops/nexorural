@@ -6,6 +6,7 @@
  *  POST auth.php?accion=instalar   crea el PRIMER administrador (solo si no hay usuarios)
  *  POST auth.php?accion=login      { usuario, clave, recordar }
  *  POST auth.php?accion=logout
+ *  POST auth.php?accion=mi_clave   { actual, nueva }   cambiar la propia contraseña
  */
 require __DIR__ . '/_base.php';
 
@@ -102,6 +103,20 @@ switch (accion()) {
             'httponly' => true, 'samesite' => 'Strict', 'secure' => $p['secure'],
         ]);
         session_destroy();
+        responder(['ok' => true]);
+
+    case 'mi_clave':
+        $d = entrada();
+        $yo = exigirSesion();
+        $actual = (string)($d['actual'] ?? '');
+        $nueva = (string)($d['nueva'] ?? '');
+        $st = db()->prepare('SELECT clave_hash FROM usuarios WHERE id = ?');
+        $st->execute([$yo['id']]);
+        if (!password_verify($actual, (string)$st->fetchColumn())) fallar('La contraseña actual no es correcta.', 403, 'credenciales');
+        if (strlen($nueva) < 6) fallar('La contraseña nueva debe tener al menos 6 caracteres.');
+        if ($nueva === $actual) fallar('La contraseña nueva tiene que ser distinta de la actual.');
+        db()->prepare('UPDATE usuarios SET clave_hash = ? WHERE id = ?')->execute([password_hash($nueva, PASSWORD_DEFAULT), $yo['id']]);
+        session_regenerate_id(true);
         responder(['ok' => true]);
 
     default:

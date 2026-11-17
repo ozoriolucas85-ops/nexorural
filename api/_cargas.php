@@ -25,6 +25,38 @@ function acumulado(int $cargaId): float
     return (float)$st->fetchColumn();
 }
 
+/**
+ * Valida tipo, peso y caravana de un animal (registrar y editar).
+ * Si $cargaId no es null, deja constancia de los rechazos en la auditoría.
+ * Devuelve [filaTipo, peso, fueraDeRango, caravana] o corta con un error.
+ */
+function validarAnimal(array $d, ?int $cargaId): array
+{
+    global $CONFIG;
+    $peso = numero($d['peso'] ?? null);
+    $peso = $peso === null ? null : redondear($peso);
+    $st = db()->prepare('SELECT id, peso_min_ref_kg, peso_max_ref_kg FROM tipos_animal WHERE codigo = ? AND activo = 1');
+    $st->execute([(string)($d['tipo'] ?? '')]);
+    $t = $st->fetch();
+
+    if (!$t || $peso === null || $peso <= 0) {
+        if ($cargaId) registrarRechazo($cargaId, $t ? (int)$t['id'] : null, (string)($d['peso'] ?? ''), 'dato_invalido');
+        fallar('Ingrese datos válidos', 422, 'invalido');
+    }
+    if ($peso > $CONFIG['peso_animal_max_kg']) {
+        if ($cargaId) registrarRechazo($cargaId, (int)$t['id'], (string)$peso, 'dato_invalido');
+        fallar('Ingrese datos válidos', 422, 'invalido', [
+            'detalle' => 'Ningún animal puede pesar más de ' . number_format($CONFIG['peso_animal_max_kg'], 0, ',', '.') . ' kg.',
+        ]);
+    }
+    $fuera = $peso < (float)$t['peso_min_ref_kg'] || $peso > (float)$t['peso_max_ref_kg'];
+    if ($fuera && empty($d['fueraDeRango'])) {
+        fallar('El peso está fuera del rango orientativo: confirmá el dato.', 422, 'confirmar_rango');
+    }
+    $caravana = textoCorto(isset($d['caravana']) ? strtoupper((string)$d['caravana']) : null, 20);
+    return [$t, $peso, $fuera, $caravana];
+}
+
 function registrarRechazo(int $cargaId, ?int $tipoId, string $peso, string $motivo): void
 {
     db()->prepare('INSERT INTO intentos_rechazados (carga_id, tipo_animal_id, peso_ingresado, motivo, peso_acumulado_kg)

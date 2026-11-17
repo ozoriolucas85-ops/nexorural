@@ -29,6 +29,9 @@
   var ultimoRegistro = 0;
   var ocupado = false;
   var timerMensaje = null;
+  var editando = null;            // id del animal que se está corrigiendo
+  var confirmarEdicion = null;    // clave tipo|peso que espera confirmación por rango al corregir
+  var camiones = [];              // camiones guardados (modo servidor)
 
   function estado() {
     return carga ? { capacidad: carga.capacidad, animales: carga.animales } : { capacidad: 0, animales: [] };
@@ -44,6 +47,8 @@
     store = ctx.store;
     usuario = ctx.usuario;
     $('saludo').textContent = saludo + ', ' + usuario.nombre.split(' ')[0];
+    pintarCatalogo();
+    store.camiones().then(pintarCamiones, function () { /* sin camiones */ });
     return store.cargaActual();
   }).then(function (c) {
     carga = c;
@@ -99,7 +104,10 @@
 
     var patente = $('patente').value.trim().toUpperCase();
     var eraNueva = !carga;
-    operar(eraNueva ? store.iniciar(r.capacidad, patente) : store.actualizar(r.capacidad, patente)).then(function (c) {
+    var camion = camionElegido();
+    // Si se eligió un camión guardado y no se cambió la patente, la carga queda asociada a ese camión.
+    var camionId = camion && camion.patente === patente.replace(/\s+/g, '') ? camion.id : null;
+    operar(eraNueva ? store.iniciar(r.capacidad, patente, camionId) : store.actualizar(r.capacidad, patente)).then(function (c) {
       carga = c;
       ayuda.classList.remove('is-error');
       $('capacidad').classList.remove('is-invalid');
@@ -107,9 +115,58 @@
       ayuda.textContent = eraNueva
         ? 'Carga iniciada. Ya podés registrar animales.'
         : 'Datos del camión actualizados (' + kg(c.capacidad) + ').';
-      if (eraNueva) document.querySelector('input[name="tipo"]').focus();
+      if (eraNueva) { var r0 = document.querySelector('input[name="tipo"]'); if (r0) r0.focus(); }
     }, function (err) { errorCapacidad(err.mensaje); });
   });
+
+  /* ---------- Camiones guardados ---------- */
+  function pintarCamiones(lista) {
+    camiones = lista || [];
+    var sel = $('camionGuardado');
+    sel.innerHTML = '<option value="">Otro camión (escribir los datos)</option>' + camiones.map(function (c) {
+      return '<option value="' + esc(c.id) + '">' + esc(c.patente) + (c.descripcion ? ' · ' + esc(c.descripcion) : '') +
+        ' · ' + kg(c.capacidad) + '</option>';
+    }).join('');
+    $('campoCamion').hidden = !camiones.length || !!carga;
+  }
+  function camionElegido() {
+    var id = $('camionGuardado').value;
+    return camiones.filter(function (c) { return c.id === id; })[0] || null;
+  }
+  $('camionGuardado').addEventListener('change', function () {
+    var c = camionElegido();
+    if (!c) return;
+    $('capacidad').value = c.capacidad.toLocaleString('es-AR', { maximumFractionDigits: 2 });
+    $('patente').value = c.patente;
+    $('capacidad').classList.remove('is-invalid');
+    $('capacidadAyuda').classList.remove('is-error');
+  });
+
+  /* ---------- Catálogo de categorías: botones, leyenda y rangos ---------- */
+  function pintarCatalogo() {
+    var tipos = L.tiposActivos();
+    $('opcionesTipo').innerHTML = tipos.map(function (t) {
+      return '<label class="species__opt" style="--c:' + UI.colorTipo(t.codigo) + '">' +
+        '<input type="radio" name="tipo" value="' + esc(t.codigo) + '">' +
+        '<span><strong>' + esc(t.nombre) + '</strong><small class="mono">' + rango(t) + '</small></span></label>';
+    }).join('');
+    $('leyenda').innerHTML = tipos.map(function (t) {
+      return '<span><i class="sw" style="background:' + UI.colorTipo(t.codigo) + '"></i>' + esc(t.nombre) + '</span>';
+    }).join('');
+
+    var maxEscala = Math.max(1600, Math.ceil(Math.max.apply(null, tipos.map(function (t) { return t.max; })) / 400) * 400);
+    $('rangos').innerHTML = tipos.map(function (t) {
+      var izq = (t.min / maxEscala) * 100, ancho = ((t.max - t.min) / maxEscala) * 100;
+      return '<div class="range"><strong>' + esc(t.nombre) + '</strong><span class="mono">' + rango(t) + '</span>' +
+        '<div class="range__bar"><i style="left:' + izq.toFixed(2) + '%;width:' + ancho.toFixed(2) + '%;background:' + UI.colorTipo(t.codigo) + '"></i></div></div>';
+    }).join('');
+    var marcas = [];
+    for (var i = 0; i <= 4; i++) marcas.push('<span>' + (maxEscala * i / 4).toLocaleString('es-AR') + (i === 4 ? ' kg' : '') + '</span>');
+    $('escalaRangos').innerHTML = marcas.join('');
+  }
+  function rango(t) {
+    return t.min.toLocaleString('es-AR') + '–' + t.max.toLocaleString('es-AR') + ' kg';
+  }
 
   function errorCapacidad(msg) {
     var ayuda = $('capacidadAyuda');
@@ -274,7 +331,8 @@
     var pesoMal = isNaN(pn) || L.redondear(pn) <= 0 || pn > L.LIMITES.pesoAnimalMaxKg;
     $('peso').classList.toggle('is-invalid', pesoMal);
     $('especies').classList.toggle('is-invalid', !datos.tipo);
-    if (!datos.tipo) document.querySelector('input[name="tipo"]').focus();
+    var r0 = document.querySelector('input[name="tipo"]');
+    if (!datos.tipo && r0) r0.focus();
     else if (pesoMal) $('peso').focus();
   }
 
@@ -302,16 +360,77 @@
     actualizarPreview();
     resetConfirmacion();
   });
-  document.querySelectorAll('input[name="tipo"]').forEach(function (r) {
-    r.addEventListener('change', function () {
-      $('especies').classList.remove('is-invalid');
-      resetConfirmacion();
-    });
+  $('opcionesTipo').addEventListener('change', function () {
+    $('especies').classList.remove('is-invalid');
+    resetConfirmacion();
   });
   $('capacidad').addEventListener('input', function () {
     this.classList.remove('is-invalid');
     $('capacidadAyuda').classList.remove('is-error');
   });
+
+  /* ---------- Corregir un animal ---------- */
+  $('tablaAnimales').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-editar]');
+    if (b && !ocupado) {
+      editando = b.getAttribute('data-editar');
+      confirmarEdicion = null;
+      pintarTabla();
+      var p = document.getElementById('edPeso');
+      if (p) { p.focus(); p.select(); }
+      return;
+    }
+    if (e.target.closest('[data-cancelar-edicion]')) {
+      editando = null;
+      pintarTabla();
+    }
+  });
+  $('tablaAnimales').addEventListener('input', function (e) {
+    if (e.target.id === 'edPeso' || e.target.id === 'edTipo') {
+      confirmarEdicion = null;
+      var g = document.getElementById('edGuardar');
+      if (g) { g.textContent = 'Guardar'; g.classList.remove('btn--warn'); }
+    }
+  });
+  $('tablaAnimales').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (e.target.id !== 'formEdicion' || ocupado) return;
+    var id = editando;
+    var datos = { tipo: $('edTipo').value, peso: $('edPeso').value, caravana: $('edCaravana').value.trim() };
+    var otros = { capacidad: carga.capacidad, animales: carga.animales.filter(function (a) { return a.id !== id; }) };
+    var r = L.evaluarRegistro(otros, datos);
+    if (!r.ok) {
+      return avisoEdicion(r.motivo === 'excede'
+        ? L.MENSAJES.EXCEDE + ': el total quedaría en ' + kg(r.propuesto) + '.'
+        : r.mensaje + (r.detalle ? '. ' + r.detalle : ''));
+    }
+    var clave = datos.tipo + '|' + r.peso;
+    if (r.advertenciaRango && confirmarEdicion !== clave) {
+      var t = L.TIPOS_ANIMAL[datos.tipo];
+      confirmarEdicion = clave;
+      $('edGuardar').textContent = 'Confirmar igualmente';
+      $('edGuardar').classList.add('btn--warn');
+      return avisoEdicion('Fuera del rango orientativo (' + rango(t) + '). Si es correcto, confirmá.', 'warn');
+    }
+    operar(store.editar(id, { tipo: datos.tipo, peso: r.peso, caravana: datos.caravana, fueraDeRango: !!r.advertenciaRango }))
+      .then(function (c) {
+        carga = c;
+        editando = null;
+        render(id);
+        mostrarMensaje('ok', '<strong>Registro corregido</strong><span>' + esc(L.nombreTipo(datos.tipo)) + ' · ' + kg(r.peso) +
+          '. Quedan ' + kg(L.resumen(estado()).disponible) + ' disponibles.</span>');
+      }, function (err) {
+        if (err.carga) { carga = err.carga; }
+        avisoEdicion(err.mensaje + (err.detalle ? '. ' + err.detalle : ''));
+      });
+  });
+  function avisoEdicion(texto, tipo) {
+    var el = document.getElementById('edMensaje');
+    if (!el) return;
+    el.className = 'edit-msg edit-msg--' + (tipo || 'error');
+    el.textContent = texto;
+    el.hidden = false;
+  }
 
   /* ---------- RF-09: eliminar y deshacer ---------- */
   $('tablaAnimales').addEventListener('click', function (e) {
@@ -320,6 +439,7 @@
     var id = btn.getAttribute('data-eliminar');
     operar(store.eliminar(id)).then(function (c) {
       carga = c;
+      if (editando === id) editando = null;
       ultimoEliminado = id;
       render();
       mostrarMensaje('info', '<strong>Registro eliminado</strong><span>Se recalcularon los totales. ' +
@@ -364,9 +484,8 @@
 
     var conteo = {};
     e.animales.forEach(function (a) { conteo[a.tipo] = (conteo[a.tipo] || 0) + 1; });
-    var plural = { vaca: 'vacas', toro: 'toros', oveja: 'ovejas' };
     var partes = Object.keys(conteo).map(function (t) {
-      return conteo[t] + ' ' + (conteo[t] === 1 ? L.nombreTipo(t).toLowerCase() : (plural[t] || L.nombreTipo(t).toLowerCase()));
+      return conteo[t] + ' ' + (conteo[t] === 1 ? L.nombreTipo(t).toLowerCase() : L.plural(L.nombreTipo(t)));
     });
     $('kpiDesglose').textContent = partes.length ? partes.join(' · ') : 'Sin registros';
 
@@ -385,6 +504,8 @@
     $('configBadge').classList.toggle('is-done', configurado);
     $('btnConfig').textContent = configurado ? 'Actualizar datos' : 'Iniciar carga';
     $('bloqueFinalizar').hidden = !configurado;
+    $('campoCamion').hidden = configurado || !camiones.length;
+    if (configurado) $('camionGuardado').value = '';
     $('btnCerrar').disabled = !configurado || s.cantidad === 0;
     $('btnCerrar').title = s.cantidad === 0 ? 'Registrá al menos un animal para cerrar la carga' : '';
     if (configurado && document.activeElement !== $('capacidad') && document.activeElement !== $('patente')) {
@@ -417,9 +538,13 @@
     if (cap > 0) {
       e.animales.forEach(function (a, i) {
         var w = (a.peso / cap) * ANCHO_CAJA;
-        html += '<g class="seg seg--' + esc(a.tipo) + '"><title>' + (i + 1) + '. ' + esc(L.nombreTipo(a.tipo)) + ' · ' + kg(a.peso) + '</title>' +
-          '<rect x="' + x.toFixed(2) + '" y="34" width="' + Math.max(w, 1).toFixed(2) + '" height="164"/>';
-        if (w > 46) html += '<text x="' + (x + w / 2).toFixed(2) + '" y="186" text-anchor="middle">' + Math.round(a.peso) + '</text>';
+        var color = UI.colorTipo(a.tipo);
+        html += '<g class="seg"><title>' + (i + 1) + '. ' + esc(L.nombreTipo(a.tipo)) + ' · ' + kg(a.peso) + '</title>' +
+          '<rect x="' + x.toFixed(2) + '" y="34" width="' + Math.max(w, 1).toFixed(2) + '" height="164" style="fill:' + color + '"/>';
+        if (w > 46) {
+          html += '<text x="' + (x + w / 2).toFixed(2) + '" y="186" text-anchor="middle" style="fill:' +
+            (UI.esClaro(color) ? '#047857' : '#fff') + '">' + Math.round(a.peso) + '</text>';
+        }
         html += '</g>';
         x += w;
       });
@@ -447,19 +572,24 @@
     var acumulado = 0;
     $('tablaAnimales').innerHTML = e.animales.map(function (a, i) {
       acumulado = L.redondear(acumulado + a.peso);
+      if (a.id === editando) return filaEdicion(a, i);
       var nombre = esc(L.nombreTipo(a.tipo));
       var aviso = L.fueraDeRango(a.tipo, a.peso)
         ? ' <span class="tag tag--warn" title="Fuera del rango orientativo">revisado</span>' : '';
       return '<tr' + (a.id === idNuevo ? ' class="is-new"' : '') + '>' +
         '<td class="mono">' + String(i + 1).padStart(2, '0') + '</td>' +
-        '<td><span class="tag tag--' + esc(a.tipo) + '">' + nombre + '</span>' + aviso + '</td>' +
+        '<td>' + UI.tagTipo(a.tipo) + aviso + '</td>' +
         '<td class="mono">' + (a.caravana ? esc(a.caravana) : '<span class="muted">—</span>') + '</td>' +
         '<td class="num mono">' + kg(a.peso) + '</td>' +
         '<td class="num mono muted">' + kg(acumulado) + '</td>' +
         '<td class="mono muted">' + UI.hora(a.hora) + '</td>' +
-        '<td class="actions"><button type="button" class="icon-btn icon-btn--danger" data-eliminar="' + esc(a.id) + '" ' +
+        '<td class="actions"><div class="acciones-fila">' +
+        '<button type="button" class="icon-btn" data-editar="' + esc(a.id) + '" title="Corregir" aria-label="Corregir ' + nombre + ' de ' + kg(a.peso) + '">' +
+        '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4zM14 6l4 4"/></svg></button>' +
+        '<button type="button" class="icon-btn icon-btn--danger" data-eliminar="' + esc(a.id) + '" ' +
         'title="Eliminar registro" aria-label="Eliminar ' + nombre + ' de ' + kg(a.peso) + '">' +
-        '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></td>' +
+        '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>' +
+        '</div></td>' +
         '</tr>';
     }).join('');
 
@@ -472,6 +602,24 @@
     $('listaResumen').textContent = vacia
       ? 'Todavía no hay animales registrados.'
       : e.animales.length + (e.animales.length === 1 ? ' animal aceptado' : ' animales aceptados') + ' en esta carga.';
+  }
+
+  /** Fila para corregir tipo, peso y caravana de un animal. */
+  function filaEdicion(a, i) {
+    var opciones = L.tiposActivos();
+    if (!opciones.some(function (t) { return t.codigo === a.tipo; })) opciones.unshift({ codigo: a.tipo, nombre: L.nombreTipo(a.tipo) });
+    return '<tr class="fila-edicion"><td class="mono">' + String(i + 1).padStart(2, '0') + '</td>' +
+      '<td colspan="6"><form id="formEdicion" class="edit-form" novalidate>' +
+      '<select id="edTipo" aria-label="Tipo">' + opciones.map(function (t) {
+        return '<option value="' + esc(t.codigo) + '"' + (t.codigo === a.tipo ? ' selected' : '') + '>' + esc(t.nombre) + '</option>';
+      }).join('') + '</select>' +
+      '<input id="edPeso" class="mono" inputmode="decimal" aria-label="Peso en kg" value="' +
+      esc(a.peso.toLocaleString('es-AR', { maximumFractionDigits: 2 })) + '">' +
+      '<input id="edCaravana" class="mono upper" maxlength="20" aria-label="Caravana" placeholder="Caravana" value="' + esc(a.caravana || '') + '">' +
+      '<button type="submit" class="btn btn--primary btn--sm" id="edGuardar">Guardar</button>' +
+      '<button type="button" class="btn btn--ghost btn--sm" data-cancelar-edicion>Cancelar</button>' +
+      '<p class="edit-msg" id="edMensaje" hidden></p>' +
+      '</form></td></tr>';
   }
 
   function sacudir(el) {

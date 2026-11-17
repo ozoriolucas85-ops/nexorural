@@ -34,11 +34,11 @@
       <p class="side-label">Gestión</p>
       <a href="historial.html">
         <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>
-        Historial<span class="solo-escritorio"> de cargas</span>
+        <span>Historial<span class="solo-escritorio"> de cargas</span></span>
       </a>
-      <a href="usuarios.html" id="navUsuarios" hidden>
+      <a href="administracion.html" id="navUsuarios" hidden>
         <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c1-4 4-6 7-6s6 2 7 6M17 11a3 3 0 1 0 0-6M22 21c-.5-3-2-4.5-4-5"/></svg>
-        Usuarios
+        Administración
       </a>
     </nav>
 
@@ -108,11 +108,7 @@
             <h2>Estado del camión</h2>
             <p class="muted">Cada bloque es un animal, proporcional a su peso.</p>
           </div>
-          <div class="legend">
-            <span><i class="sw sw--vaca"></i>Vaca</span>
-            <span><i class="sw sw--toro"></i>Toro</span>
-            <span><i class="sw sw--oveja"></i>Oveja</span>
-          </div>
+          <div class="legend" id="leyenda"></div>
         </div>
 
         <div class="truck-wrap">
@@ -172,6 +168,10 @@
             <span class="step-badge" id="configBadge">Pendiente</span>
           </div>
           <form id="formConfig" class="form" novalidate>
+            <label class="field" id="campoCamion" hidden>
+              <span>Camión guardado <small>(completa capacidad y patente)</small></span>
+              <select id="camionGuardado"><option value="">Otro camión (escribir los datos)</option></select>
+            </label>
             <div class="field-row">
               <label class="field">
                 <span>Capacidad máxima (kg) <b class="req">*</b></span>
@@ -207,18 +207,7 @@
           <form id="formAnimal" class="form" novalidate>
             <fieldset class="species" id="especies">
               <legend>Tipo de animal <b class="req">*</b></legend>
-              <label class="species__opt">
-                <input type="radio" name="tipo" value="vaca">
-                <span><strong>Vaca</strong><small class="mono">500–800 kg</small></span>
-              </label>
-              <label class="species__opt">
-                <input type="radio" name="tipo" value="toro">
-                <span><strong>Toro</strong><small class="mono">600–1.100 kg</small></span>
-              </label>
-              <label class="species__opt">
-                <input type="radio" name="tipo" value="oveja">
-                <span><strong>Oveja</strong><small class="mono">35–180 kg</small></span>
-              </label>
+              <div class="species__grid" id="opcionesTipo"></div>
             </fieldset>
             <div class="field-row">
               <label class="field">
@@ -298,12 +287,8 @@
           <p class="muted">Solo sirven para detectar errores de tipeo. No reemplazan el peso real ni son límites rígidos.</p>
         </div>
       </div>
-      <div class="ranges">
-        <div class="range"><strong>Vaca adulta</strong><span class="mono">500 – 800 kg</span><div class="range__bar"><i style="left:31.25%;width:18.75%"></i></div></div>
-        <div class="range"><strong>Toro adulto</strong><span class="mono">600 – 1.100 kg</span><div class="range__bar"><i style="left:37.5%;width:31.25%"></i></div></div>
-        <div class="range"><strong>Oveja adulta</strong><span class="mono">35 – 180 kg</span><div class="range__bar"><i style="left:2.19%;width:9.06%"></i></div></div>
-      </div>
-      <p class="range-scale mono"><span>0</span><span>400</span><span>800</span><span>1.200</span><span>1.600 kg</span></p>
+      <div class="ranges" id="rangos"></div>
+      <p class="range-scale mono" id="escalaRangos"></p>
     </section>
 
     <footer class="footer">

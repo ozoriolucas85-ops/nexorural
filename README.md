@@ -24,7 +24,7 @@ La app detecta sola el modo y lo muestra arriba a la derecha: **Conectado** o **
 2. En el panel de XAMPP encendé **Apache** y **MySQL**.
 3. Entrá a `http://localhost/phpmyadmin` → **Importar** → `database/nexorural_estructura.sql` → **Continuar**.
 4. Abrí `http://localhost/nexorural`. La primera vez te pide crear el **administrador**.
-5. Desde **Usuarios** creá las cuentas de los capataces.
+5. Desde **Administración** creá las cuentas de los capataces y, si querés, los camiones y categorías.
 
 Si MySQL tiene contraseña o usás otro servidor, cambiá los datos en `api/config.php`.
 
@@ -35,12 +35,12 @@ Si MySQL tiene contraseña o usás otro servidor, cambiá los datos en `api/conf
 ### Usar desde el celular
 
 1. En la PC con XAMPP ejecutá **una sola vez** `scripts\habilitar-celulares.bat` (doble clic → aceptar el permiso de administrador). Agrega una regla al Firewall de Windows que deja entrar a Apache **solo desde el wifi local**.
-2. Como administrador, entrá a **Usuarios**: arriba aparece la dirección para celulares (ej. `http://192.168.1.18/nexorural/`) con botones para copiarla o mandarla por WhatsApp.
+2. Como administrador, entrá a **Administración**: arriba aparece la dirección para celulares (ej. `http://192.168.1.18/nexorural/`) con botones para copiarla o mandarla por WhatsApp.
 3. En el celular (conectado al **mismo wifi**), abrí esa dirección. Desde el menú del navegador se puede **"Agregar a la pantalla de inicio"** y queda como una app con su ícono.
 
 En el celular, con una carga en curso, lo primero que aparece es el formulario de **Registrar animal**.
 
-> La IP de la PC la asigna el router y puede cambiar. Si un día el celular no entra, revisá la dirección en **Usuarios**. Para que no cambie, se puede reservar la IP en el router.
+> La IP de la PC la asigna el router y puede cambiar. Si un día el celular no entra, revisá la dirección en **Administración**. Para que no cambie, se puede reservar la IP en el router.
 
 ### Respaldos de la base de datos
 
@@ -59,12 +59,12 @@ Las tipografías están incluidas en el proyecto (`assets/fonts/`, licencia SIL 
 ## Cómo usarla
 
 1. **Ingresar** con tu usuario y contraseña.
-2. **Configurar camión**: capacidad máxima en kg y, si querés, la patente → *Iniciar carga*.
+2. **Configurar camión**: elegí un **camión guardado** (completa solo la capacidad y la patente) o escribí los datos → *Iniciar carga*.
 3. **Registrar animal**: elegí vaca, toro u oveja, escribí el peso real y tocá *Registrar animal*.
 4. El sistema calcula `pesoAcumulado + pesoNuevo`:
    - si es **≤ capacidad**, acepta el animal y actualiza los indicadores;
    - si es **> capacidad**, muestra **«Capacidad máxima superada»** y no cambia nada.
-5. Si cargaste algo por error, eliminalo desde la tabla (podés *Deshacer*).
+5. Si cargaste algo mal, **corregilo** con el lápiz ✏️ (tipo, peso o caravana) o **eliminalo** con la papelera (podés *Deshacer*). La corrección también respeta la capacidad del camión.
 6. Al terminar, **Cerrar carga** (con observaciones opcionales): queda en el **Historial**.
    Si el viaje no sale, **Cancelar carga** (también queda registrado, como cancelado).
 7. *Imprimir planilla* genera una hoja con el detalle y lugar para la firma; *Excel (CSV)* la descarga para Excel.
@@ -73,9 +73,16 @@ Las tipografías están incluidas en el proyecto (`assets/fonts/`, licencia SIL 
 
 Todas las cargas con filtros por estado y fechas, totales del período (kilos transportados, animales, uso promedio del camión), detalle de cada viaje, reimpresión de la planilla y exportación a CSV.
 
-### Usuarios (solo administradores)
+### Administración (solo administradores)
 
-Alta de capataces y administradores, activar/desactivar cuentas y asignar una contraseña nueva si alguien se la olvida.
+- **Usuarios:** alta de capataces y administradores, activar/desactivar cuentas y asignar una contraseña nueva si alguien se la olvida.
+- **Camiones guardados:** patente, descripción y capacidad. Aparecen en una lista al iniciar la carga.
+- **Categorías de animales:** además de vaca, toro y oveja, se pueden crear otras (ternero, novillo, vaquillona…) con su rango orientativo, editarlas o desactivarlas. Cada una tiene su color en el camión y en las tablas.
+- **Acceso desde celulares:** la dirección para el wifi, con botones para copiarla o mandarla por WhatsApp.
+
+### Mi contraseña
+
+Cualquier usuario puede cambiar su propia contraseña con el botón 🔑 de la tarjeta de usuario (abajo a la izquierda).
 
 ## Funciones (requisitos del análisis)
 
@@ -112,7 +119,7 @@ nexorural/
 ├── index.html              Ingreso (y alta del primer administrador)
 ├── panel.html              Panel de carga
 ├── historial.html          Historial de cargas
-├── usuarios.html           Gestión de usuarios (administradores)
+├── administracion.html     Usuarios, camiones, categorías y acceso desde celulares
 ├── css/styles.css          Estilos (paleta y tipografías del análisis)
 ├── js/
 │   ├── logic.js            Reglas de negocio (sin interfaz, testeable)
@@ -120,12 +127,13 @@ nexorural/
 │   ├── ui.js               Utilidades comunes (barra lateral, planilla, CSV)
 │   ├── app.js              Panel de carga
 │   ├── historial.js        Historial
-│   ├── usuarios.js         Usuarios
+│   ├── administracion.js   Administración
 │   └── login.js            Ingreso
 ├── api/                    Backend PHP 8 + MySQL (PDO)
 │   ├── config.php          Datos de conexión y límites
 │   ├── auth.php            Ingreso, salida y alta del primer administrador
 │   ├── carga.php           Carga en curso (iniciar, registrar, eliminar, cerrar…)
+│   ├── catalogo.php        Categorías de animales y camiones guardados
 │   ├── historial.php       Listado y detalle de cargas
 │   └── usuarios.php        Alta, activar/desactivar, cambiar contraseña
 ├── manifest.webmanifest    Para instalarla en el celular ("Agregar a pantalla de inicio")
@@ -151,14 +159,15 @@ Todas las respuestas son JSON (`{ "ok": true, ... }` o `{ "ok": false, "mensaje"
 
 | Archivo | Acciones |
 |---|---|
-| `auth.php` | `estado` (GET), `instalar`, `login`, `logout` |
-| `carga.php` | `actual` (GET), `iniciar`, `capacidad`, `registrar`, `eliminar`, `restaurar`, `rechazo`, `cerrar`, `cancelar` |
+| `auth.php` | `estado` (GET), `instalar`, `login`, `logout`, `mi_clave` |
+| `carga.php` | `actual` (GET), `iniciar` (con `camionId` opcional), `capacidad`, `registrar`, `editar`, `eliminar`, `restaurar`, `rechazo`, `cerrar`, `cancelar` |
+| `catalogo.php` | `tipos`, `camiones` (GET, cualquier usuario); `camiones_todos`, `tipo_guardar`, `tipo_activo`, `camion_guardar`, `camion_activo` (administradores) |
 | `historial.php` | `listar` (GET, filtros `estado`, `desde`, `hasta`), `detalle` (GET, `id`) |
 | `usuarios.php` | `listar` (GET), `red` (GET, dirección para celulares), `crear`, `activo`, `clave` — solo administradores |
 
 ## Pruebas
 
-- Reglas de negocio: `tests/index.html` en el navegador o `node tests/run-node.js` (16 casos, incluye todos los de la sección 12).
+- Reglas de negocio: `tests/index.html` en el navegador o `node tests/run-node.js` (19 casos, incluye todos los de la sección 12).
 
 ## Base de datos
 

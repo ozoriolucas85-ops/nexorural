@@ -69,11 +69,23 @@
         return post('auth.php', 'login', { usuario: usuario, clave: clave, recordar: recordar }).then(function (j) { return j.usuario; });
       },
       logout: function () { return post('auth.php', 'logout'); },
+      miClave: function (actual, nueva) { return post('auth.php', 'mi_clave', { actual: actual, nueva: nueva }); },
+
+      tipos: function () { return get('catalogo.php', 'tipos').then(function (j) { return j.tipos; }); },
+      camiones: function () { return get('catalogo.php', 'camiones').then(function (j) { return j.camiones; }); },
+      camionesTodos: function () { return get('catalogo.php', 'camiones_todos').then(function (j) { return j.camiones; }); },
+      guardarTipo: function (d) { return post('catalogo.php', 'tipo_guardar', d); },
+      activarTipo: function (codigo, activo) { return post('catalogo.php', 'tipo_activo', { codigo: codigo, activo: activo }); },
+      guardarCamion: function (d) { return post('catalogo.php', 'camion_guardar', d); },
+      activarCamion: function (id, activo) { return post('catalogo.php', 'camion_activo', { id: id, activo: activo }); },
 
       cargaActual: function () { return get('carga.php', 'actual').then(carga); },
-      iniciar: function (cap, patente) { return post('carga.php', 'iniciar', { capacidad: cap, patente: patente }).then(carga); },
+      iniciar: function (cap, patente, camionId) {
+        return post('carga.php', 'iniciar', { capacidad: cap, patente: patente, camionId: camionId || null }).then(carga);
+      },
       actualizar: function (cap, patente) { return post('carga.php', 'capacidad', { capacidad: cap, patente: patente }).then(carga); },
       registrar: function (d) { return post('carga.php', 'registrar', d).then(function (j) { return { carga: j.carga, id: j.id }; }); },
+      editar: function (id, d) { return post('carga.php', 'editar', Object.assign({ id: id }, d)).then(carga); },
       eliminar: function (id) { return post('carga.php', 'eliminar', { id: id }).then(carga); },
       restaurar: function (id) { return post('carga.php', 'restaurar', { id: id }).then(carga); },
       rechazo: function (d) { return post('carga.php', 'rechazo', d).catch(function () {}); },
@@ -95,6 +107,12 @@
      MODO LOCAL (navegador)
      ===================================================== */
   function crearLocal() {
+    // Copia de las categorías originales (el catálogo de logic.js puede cambiar).
+    var TIPOS_BASE = {
+      vaca: { nombre: 'Vaca', min: 500, max: 800 },
+      toro: { nombre: 'Toro', min: 600, max: 1100 },
+      oveja: { nombre: 'Oveja', min: 35, max: 180 }
+    };
     function leer(clave, def) {
       try { var v = JSON.parse(localStorage.getItem(clave)); return v == null ? def : v; } catch (e) { return def; }
     }
@@ -171,6 +189,18 @@
         sessionStorage.removeItem(K.operador);
         return ok(true);
       },
+      miClave: soloServidor,
+
+      // En modo local las categorías son las del análisis y no hay camiones guardados.
+      tipos: function () {
+        return ok(Object.keys(TIPOS_BASE).map(function (k) { return Object.assign({ codigo: k, activo: true }, TIPOS_BASE[k]); }));
+      },
+      camiones: function () { return ok([]); },
+      camionesTodos: soloServidor,
+      guardarTipo: soloServidor,
+      activarTipo: soloServidor,
+      guardarCamion: soloServidor,
+      activarCamion: soloServidor,
 
       cargaActual: function () { return ok(publica(leerCarga())); },
       iniciar: function (cap, patente) {
@@ -202,6 +232,22 @@
           c.animales.push(nuevo);
           guardar(K.carga, c);
           return { carga: publica(c), id: nuevo.id };
+        });
+      },
+      editar: function (id, d) {
+        return intentar(function () {
+          var c = exigir();
+          var a = c.animales.filter(function (x) { return x.id === id && !x.eliminado; })[0];
+          if (!a) throw error('No se encontró ese registro en la carga actual.', 'no_encontrado');
+          var otros = publica(c).animales.filter(function (x) { return x.id !== id; });
+          var r = L.evaluarRegistro({ capacidad: c.capacidad, animales: otros }, d);
+          if (!r.ok) throw error(r.mensaje, r.motivo, r);
+          a.tipo = d.tipo;
+          a.peso = r.peso;
+          a.caravana = String(d.caravana || '').trim().toUpperCase();
+          a.fueraDeRango = !!r.advertenciaRango;
+          guardar(K.carga, c);
+          return publica(c);
         });
       },
       eliminar: function (id) { return this._marcar(id, true); },
