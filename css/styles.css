@@ -89,13 +89,36 @@ svg { display: block; }
    ========================================================= */
 .login-page { min-height: 100vh; min-height: 100dvh; overflow-x: hidden; }
 
-.landscape { position: fixed; inset: 0; z-index: -1; }
-.landscape svg { width: 100%; height: 100%; }
+.landscape {
+  position: fixed; inset: 0; z-index: -1;
+  background-color: #3F5A2A;
+  background-image:
+    linear-gradient(90deg, rgba(15, 23, 42, .55) 0%, rgba(15, 23, 42, .15) 45%, rgba(15, 23, 42, 0) 70%),
+    linear-gradient(0deg, rgba(15, 23, 42, .35), rgba(15, 23, 42, 0) 40%),
+    url('../assets/fondo-login.jpg');
+  background-size: cover;
+  background-position: center 60%;
+}
 
 .login-wrap {
   min-height: 100vh; min-height: 100dvh;
   display: grid; place-items: center;
   padding: 24px 16px;
+}
+
+/* En pantallas anchas la tarjeta va a la izquierda para dejar ver el rodeo */
+@media (min-width: 960px) {
+  .login-wrap { justify-items: start; padding-left: 7vw; }
+}
+
+/* En celular el velo cubre parejo para que el texto se lea bien */
+@media (max-width: 959px) {
+  .landscape {
+    background-image:
+      linear-gradient(0deg, rgba(15, 23, 42, .45), rgba(15, 23, 42, .25)),
+      url('../assets/fondo-login.jpg');
+    background-position: 62% center;
+  }
 }
 
 .glass-card {
