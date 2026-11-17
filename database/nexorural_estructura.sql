@@ -44,6 +44,9 @@ CREATE TABLE usuarios (
   clave_hash    VARCHAR(255)     NOT NULL                COMMENT 'Resultado de password_hash() de PHP. NUNCA la clave en texto plano',
   rol           ENUM('capataz','administrador') NOT NULL DEFAULT 'capataz',
   activo        TINYINT(1)       NOT NULL DEFAULT 1,
+  intentos_fallidos TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Se reinicia al ingresar bien',
+  bloqueado_hasta   DATETIME     NULL                COMMENT '5 intentos fallidos = 5 minutos de bloqueo',
+  ultimo_ingreso    DATETIME     NULL,
   creado_en     DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_usuarios_usuario (usuario)

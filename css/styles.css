@@ -587,3 +587,86 @@ svg { display: block; }
   .print-sheet .firma { margin-top: 40pt; }
   .print-sheet .pie { margin-top: 20pt; font-size: 8.5pt; color: #64748B; }
 }
+
+/* =========================================================
+   v2 — Servidor, historial y usuarios
+   ========================================================= */
+.is-cargando .main { visibility: hidden; }
+.is-ocupado { cursor: progress; }
+.is-ocupado .btn, .is-ocupado .icon-btn { pointer-events: none; opacity: .7; }
+
+.chip--modo { display: inline-flex; align-items: center; gap: 6px; cursor: help; }
+.chip--modo::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--slate-400); }
+.chip--modo[data-modo="servidor"] { color: var(--emerald-700); border-color: var(--emerald-100); background: var(--emerald-50); }
+.chip--modo[data-modo="servidor"]::before { background: var(--emerald-600); }
+.chip--modo[data-modo="local"] { color: var(--amber-600); border-color: var(--amber-100); background: var(--amber-50); }
+.chip--modo[data-modo="local"]::before { background: var(--amber-600); }
+.chip--modo:empty { display: none; }
+
+.btn--dark { background: var(--slate-900); color: #fff; }
+.btn--dark:hover:not(:disabled) { background: var(--slate-700); }
+.btn--dark.is-confirm { background: var(--emerald-600); }
+.btn:disabled { opacity: .45; }
+
+.finish {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 6px; padding-top: 16px; border-top: 1px dashed var(--slate-200);
+}
+
+a.link-btn { text-decoration: underline; }
+
+/* Tablas de historial / usuarios: filas clicables */
+.table tbody tr.is-clickable { cursor: pointer; }
+.table tbody tr.is-selected { background: var(--emerald-50); }
+.tag--abierta { background: var(--amber-100); color: var(--amber-600); }
+.tag--cerrada { background: var(--emerald-100); color: var(--emerald-700); }
+.tag--cancelada { background: var(--slate-100); color: var(--slate-500); }
+.tag--administrador { background: var(--slate-900); color: #fff; }
+.tag--capataz { background: var(--emerald-50); color: var(--emerald-700); }
+.tag--inactivo { background: var(--red-50); color: var(--red-600); }
+
+.filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.filters .field { min-width: 150px; }
+.seg-ctrl { display: inline-flex; padding: 4px; border-radius: 12px; background: var(--slate-100); gap: 2px; }
+.seg-ctrl button {
+  border: 0; background: none; padding: 8px 14px; border-radius: 9px; cursor: pointer;
+  font-weight: 600; font-size: .86rem; color: var(--slate-500);
+}
+.seg-ctrl button.is-on { background: #fff; color: var(--slate-900); box-shadow: 0 1px 3px rgba(15, 23, 42, .1); }
+
+.detail-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 16px; }
+.detail-grid div { padding: 12px 14px; border-radius: var(--radius-sm); background: var(--bg); border: 1px solid var(--slate-200); }
+.detail-grid span { display: block; font-size: .76rem; color: var(--slate-500); font-weight: 600; }
+.detail-grid strong { font-family: var(--mono); font-size: 1.05rem; }
+
+.page-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(320px, 1fr); gap: 22px; align-items: start; }
+.page-grid .table td, .page-grid .table th { padding-left: 8px; padding-right: 8px; }
+.page-grid > .sticky { position: sticky; top: 20px; }
+.notice {
+  padding: 18px 20px; border-radius: var(--radius); border: 1.5px dashed var(--amber-600);
+  background: var(--amber-50); color: #92400E;
+}
+.notice strong { display: block; margin-bottom: 4px; }
+
+select.select, .field select {
+  width: 100%; padding: 12px 14px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--slate-200); background: var(--bg); font: inherit; font-size: 1rem;
+}
+.field input[type="date"] { font-family: var(--mono); }
+
+/* Login: modo instalación */
+.glass-tabs { display: none; }
+.glass-card .glass-field + .glass-field { margin-top: 0; }
+.glass-info {
+  margin: -8px 0 16px; padding: 10px 14px; border-radius: 10px;
+  background: rgba(15, 23, 42, .35); font-size: .86rem;
+}
+
+@media (max-width: 1600px) {
+  .page-grid { grid-template-columns: minmax(0, 1fr); }
+  .page-grid > .sticky { position: static; }
+}
+@media (max-width: 560px) {
+  .detail-grid { grid-template-columns: repeat(2, 1fr); }
+  .filters .field { min-width: 0; flex: 1 1 140px; }
+}

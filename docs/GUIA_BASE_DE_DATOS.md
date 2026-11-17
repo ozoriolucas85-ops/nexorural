@@ -18,7 +18,8 @@ Probado en **MariaDB 10.4 (XAMPP)**. También sirve en MySQL 8.0.16 o posterior.
 3. Andá a la pestaña **Importar** (sin seleccionar ninguna base).
 4. Elegí `nexorural_estructura.sql` → **Continuar**.
    El script crea la base `nexorural` sola.
-5. (Opcional) Repetí con `datos_iniciales.sql`.
+5. (Opcional) Repetí con `datos_iniciales.sql`. No hace falta: la app carga vaca/toro/oveja sola al crear el primer administrador.
+6. Abrí `http://localhost/nexorural`: la primera vez pide crear el **administrador**. Los demás usuarios se crean desde la sección **Usuarios** de la app.
 
 > **Si usás un hosting** que no deja crear bases: borrá las líneas `CREATE DATABASE …` y `USE nexorural;` del principio, creá la base desde el panel del hosting, seleccionala y recién ahí importá.
 
@@ -47,10 +48,13 @@ Capataz o encargado que hace la carga.
 | clave_hash | VARCHAR(255) | Siempre `password_hash()` de PHP. **Nunca la clave en texto plano.** |
 | rol | ENUM capataz / administrador | |
 | activo | TINYINT(1) | 1 = puede ingresar |
+| intentos_fallidos | TINYINT | Se reinicia al ingresar bien |
+| bloqueado_hasta | DATETIME NULL | 5 intentos fallidos = 5 minutos bloqueado |
+| ultimo_ingreso | DATETIME NULL | |
 | creado_en | DATETIME | Automático |
 
 ### `camiones`
-Flota. Es opcional en la versión 1 (la app permite escribir solo la patente).
+Flota. Opcional: hoy la app guarda la patente escrita en `cargas.patente`; esta tabla queda lista para una flota registrada.
 
 | Campo | Tipo | Notas |
 |---|---|---|
@@ -139,6 +143,8 @@ try {
 ```
 
 ## 6. Conexión desde PHP: activar modo estricto
+
+> La API de NexoRural (`api/_base.php`) ya lo hace en cada conexión. Los datos de conexión están en `api/config.php`.
 
 XAMPP trae MySQL **sin modo estricto**: si un valor no entra en la columna, lo **recorta sin avisar**
 (por ejemplo, 150.000 kg en `peso_kg` se guardaría como 99.999,99). Los CHECK de la estructura ya frenan

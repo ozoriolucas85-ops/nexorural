@@ -10,7 +10,11 @@ INSERT INTO tipos_animal (codigo, nombre, peso_min_ref_kg, peso_max_ref_kg) VALU
   ('toro',  'Toro',  600.00, 1100.00),
   ('oveja', 'Oveja',  35.00,  180.00);
 
--- Usuarios: NO cargar claves en texto plano.
+-- Este archivo es OPCIONAL: la app carga estas especies sola al crear el
+-- primer administrador desde http://localhost/nexorural
+--
+-- Usuarios: se crean desde la app (sección Usuarios). Si igual los cargás
+-- a mano, NO uses claves en texto plano.
 -- Generar el hash desde PHP y pegarlo en clave_hash:
 --   <?php echo password_hash('la_clave', PASSWORD_DEFAULT); ?>
 --

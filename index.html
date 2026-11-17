@@ -26,8 +26,15 @@
         </div>
       </div>
 
-      <h1>Ingresar</h1>
-      <p class="glass-sub">Bienvenido. Ingresá para registrar la carga del camión.</p>
+      <h1 id="loginTitulo">Ingresar</h1>
+      <p class="glass-sub" id="loginSub">Bienvenido. Ingresá para registrar la carga del camión.</p>
+      <p class="glass-info" id="loginInfo" hidden></p>
+
+      <label class="glass-field" id="campoNombre" hidden>
+        <span class="sr-only">Nombre y apellido</span>
+        <input type="text" id="nombre" name="nombre" placeholder="Nombre y apellido" autocomplete="name" maxlength="80">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M14 10h4M14 14h4M6 16c.5-1.5 1.6-2 3-2s2.5.5 3 2"/></svg>
+      </label>
 
       <label class="glass-field">
         <span class="sr-only">Usuario</span>
@@ -43,19 +50,27 @@
         </button>
       </label>
 
-      <label class="glass-check">
+      <label class="glass-field" id="campoClave2" hidden>
+        <span class="sr-only">Repetir contraseña</span>
+        <input type="password" id="clave2" name="clave2" placeholder="Repetir contraseña" autocomplete="new-password">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </label>
+
+      <label class="glass-check" id="campoRecordar">
         <input type="checkbox" id="recordar" checked>
         <span>Recordarme en este equipo</span>
       </label>
 
       <p class="glass-error" id="loginError" role="alert" hidden></p>
 
-      <button type="submit" class="glass-btn">Ingresar</button>
+      <button type="submit" class="glass-btn" id="btnIngresar">Ingresar</button>
 
-      <p class="glass-note">Versión 1 · acceso local sin base de datos.<br>Desarrollado por <strong>AGO Soluciones</strong></p>
+      <p class="glass-note"><span id="loginModo">Conectando…</span><br>Desarrollado por <strong>AGO Soluciones</strong></p>
     </form>
   </main>
 
+  <script src="js/logic.js"></script>
+  <script src="js/store.js"></script>
   <script src="js/login.js"></script>
 </body>
 </html>

@@ -9,14 +9,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
-  <script>
-    // Sin sesión → volver al ingreso (antes de pintar la página).
-    if (!localStorage.getItem('nexorural.operador') && !sessionStorage.getItem('nexorural.operador')) {
-      location.replace('index.html');
-    }
-  </script>
 </head>
-<body class="app">
+<body class="app is-cargando">
 
   <!-- ===== Barra lateral ===== -->
   <aside class="sidebar">
@@ -42,10 +36,18 @@
         <svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
         Animales cargados
       </a>
-      <p class="side-label">Referencia</p>
       <a href="#seccion-rangos">
         <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
         Rangos de peso
+      </a>
+      <p class="side-label">Gestión</p>
+      <a href="historial.html">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/></svg>
+        Historial de cargas
+      </a>
+      <a href="usuarios.html" id="navUsuarios" hidden>
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="4"/><path d="M2 21c1-4 4-6 7-6s6 2 7 6M17 11a3 3 0 1 0 0-6M22 21c-.5-3-2-4.5-4-5"/></svg>
+        Usuarios
       </a>
     </nav>
 
@@ -58,7 +60,7 @@
       <span class="avatar" id="avatar">?</span>
       <div>
         <strong id="nombreOperador">Operador</strong>
-        <span>Capataz / encargado</span>
+        <span id="rolOperador">Capataz / encargado</span>
       </div>
       <button type="button" class="icon-btn" id="btnSalir" title="Cerrar sesión" aria-label="Cerrar sesión">
         <svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h11"/></svg>
@@ -76,6 +78,7 @@
         <p class="topbar__sub">Registrá cada animal antes de subirlo. El sistema bloquea cualquier ingreso que supere la capacidad del camión.</p>
       </div>
       <div class="topbar__actions">
+        <span class="chip chip--modo" id="chipModo"></span>
         <span class="chip chip--mono" id="chipPatente" hidden></span>
         <span class="status-pill" id="estadoPill" data-nivel="vacio">Sin configurar</span>
       </div>
@@ -191,7 +194,16 @@
             <p class="field-help" id="capacidadAyuda">Dato obligatorio: la consigna no fija la capacidad, la define el usuario.</p>
             <div class="btn-row">
               <button type="submit" class="btn btn--primary" id="btnConfig">Iniciar carga</button>
-              <button type="button" class="btn btn--ghost" id="btnReiniciar" hidden>Reiniciar carga</button>
+            </div>
+            <div class="finish" id="bloqueFinalizar" hidden>
+              <label class="field">
+                <span>Observaciones del viaje <small>(opcional)</small></span>
+                <input type="text" id="observaciones" maxlength="255" placeholder="Ej: destino, comprador, guía DT-e" autocomplete="off">
+              </label>
+              <div class="btn-row">
+                <button type="button" class="btn btn--dark" id="btnCerrar">Cerrar carga</button>
+                <button type="button" class="btn btn--ghost" id="btnReiniciar">Cancelar carga</button>
+              </div>
             </div>
           </form>
         </section>
@@ -245,10 +257,16 @@
             <h2>Animales cargados</h2>
             <p class="muted" id="listaResumen">Todavía no hay animales registrados.</p>
           </div>
-          <button type="button" class="btn btn--ghost btn--sm" id="btnImprimir">
-            <svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>
-            Imprimir planilla
-          </button>
+          <div class="btn-row">
+            <button type="button" class="btn btn--ghost btn--sm" id="btnCsv">
+              <svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>
+              Excel (CSV)
+            </button>
+            <button type="button" class="btn btn--ghost btn--sm" id="btnImprimir">
+              <svg viewBox="0 0 24 24"><path d="M6 9V3h12v6M6 18H4v-7h16v7h-2M8 14h8v7H8z"/></svg>
+              Imprimir planilla
+            </button>
+          </div>
         </div>
         <div class="table-wrap">
           <table class="table">
@@ -306,6 +324,8 @@
   <div class="print-sheet" id="planilla" aria-hidden="true"></div>
 
   <script src="js/logic.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ui.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

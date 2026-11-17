@@ -2,55 +2,57 @@
  * NexoRural — Panel de carga (interfaz)
  * AGO Soluciones
  *
- * Toda la regla de negocio vive en logic.js (NexoLogic).
- * Este archivo solo lee el formulario, llama a la lógica y pinta la pantalla.
+ * Reglas de negocio: logic.js (NexoLogic)
+ * Guardado:          store.js (servidor PHP/MySQL o navegador)
+ * Este archivo solo lee el formulario, valida, pide al store y pinta la pantalla.
  */
 (function () {
   'use strict';
 
   var L = window.NexoLogic;
-  var CLAVE_CARGA = 'nexorural.carga';
-  var CLAVE_SESION = 'nexorural.operador';
+  var UI = window.NexoUI;
   var ANCHO_CAJA = 572;   // ancho útil de la jaula en el SVG
   var X_CAJA = 34;
+  var ESPERA_DOBLE_CLIC = 1500;
 
   var $ = function (id) { return document.getElementById(id); };
   var kg = L.formatearKg;
+  var esc = UI.esc;
 
-  /* ---------- Estado ---------- */
-  var estado = cargarEstado();
+  /* ---------- Estado de la pantalla ---------- */
+  var store = null;
+  var usuario = null;
+  var carga = null;               // null = no hay carga abierta
   var pendienteConfirmar = null;  // clave tipo|peso que espera confirmación por rango
-  var ultimoRegistro = 0;         // momento del último alta (evita doble clic)
-  var ESPERA_DOBLE_CLIC = 1500;
-  var ultimoEliminado = null;     // para "Deshacer"
+  var ultimoEliminado = null;     // id para "Deshacer"
+  var ultimaFinalizada = null;    // para imprimir después de cerrar
+  var ultimoRegistro = 0;
+  var ocupado = false;
   var timerMensaje = null;
 
-  function cargarEstado() {
-    try {
-      return L.normalizarEstado(JSON.parse(localStorage.getItem(CLAVE_CARGA)));
-    } catch (err) { /* dato corrupto: empezar de cero */ }
-    return L.normalizarEstado(null);
+  function estado() {
+    return carga ? { capacidad: carga.capacidad, animales: carga.animales } : { capacidad: 0, animales: [] };
   }
 
-  function guardarEstado() {
-    localStorage.setItem(CLAVE_CARGA, JSON.stringify(estado));
-  }
-
-  /* ---------- Operador / encabezado ---------- */
-  var operador = localStorage.getItem(CLAVE_SESION) || sessionStorage.getItem(CLAVE_SESION) || 'Operador';
-  $('nombreOperador').textContent = operador;
-  $('avatar').textContent = operador.trim().charAt(0).toUpperCase() || '?';
-
+  /* ---------- Arranque ---------- */
   var ahora = new Date();
   var h = ahora.getHours();
   var saludo = h < 13 ? 'Buen día' : (h < 20 ? 'Buenas tardes' : 'Buenas noches');
-  $('saludo').textContent = saludo + ', ' + operador.split(' ')[0];
   $('fechaHoy').textContent = ahora.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-  $('btnSalir').addEventListener('click', function () {
-    localStorage.removeItem(CLAVE_SESION);
-    sessionStorage.removeItem(CLAVE_SESION);
-    location.href = 'index.html';
+  UI.iniciarPagina().then(function (ctx) {
+    store = ctx.store;
+    usuario = ctx.usuario;
+    $('saludo').textContent = saludo + ', ' + usuario.nombre.split(' ')[0];
+    return store.cargaActual();
+  }).then(function (c) {
+    carga = c;
+    render();
+    document.body.classList.remove('is-cargando');
+    if (!carga) $('capacidad').focus();
+  }).catch(function (e) {
+    document.body.classList.remove('is-cargando');
+    mostrarMensaje('error', '<strong>' + esc(e.mensaje || 'Error al cargar los datos') + '</strong>', true);
   });
 
   /* ---------- Mensajes ---------- */
@@ -60,73 +62,112 @@
     box.className = 'alert alert--' + tipo;
     box.innerHTML = html;
     box.hidden = false;
-    if (!persistente) {
-      timerMensaje = setTimeout(function () { box.hidden = true; }, 5000);
-    }
+    if (!persistente) timerMensaje = setTimeout(function () { box.hidden = true; }, 6000);
   }
-
   function ocultarMensaje() {
     clearTimeout(timerMensaje);
     $('mensaje').hidden = true;
   }
+  function errorGeneral(e) {
+    mostrarMensaje('error', '<strong>' + esc(e.mensaje || 'Ocurrió un error') + '</strong>' +
+      (e.detalle ? '<span>' + esc(e.detalle) + '</span>' : ''), true);
+    if (e.carga !== undefined) { carga = e.carga; render(); }
+  }
 
-  function esc(s) {
-    return String(s).replace(/[&<>"']/g, function (c) {
-      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  /** Ejecuta una operación del store bloqueando los botones mientras tanto. */
+  function operar(promesa) {
+    ocupado = true;
+    document.body.classList.add('is-ocupado');
+    return promesa.then(function (v) {
+      ocupado = false;
+      document.body.classList.remove('is-ocupado');
+      return v;
+    }, function (e) {
+      ocupado = false;
+      document.body.classList.remove('is-ocupado');
+      throw e;
     });
   }
 
   /* ---------- RF-01: configuración de capacidad ---------- */
   $('formConfig').addEventListener('submit', function (e) {
     e.preventDefault();
-    var r = L.validarCapacidad($('capacidad').value, L.sumarPesos(estado.animales));
+    if (ocupado) return;
     var ayuda = $('capacidadAyuda');
-    if (!r.ok) {
-      ayuda.textContent = r.mensaje;
-      ayuda.classList.add('is-error');
-      $('capacidad').classList.add('is-invalid');
-      $('capacidad').focus();
-      return;
-    }
-    ayuda.classList.remove('is-error');
-    $('capacidad').classList.remove('is-invalid');
-    var eraNueva = !estado.capacidad;
-    estado.capacidad = r.capacidad;
-    estado.patente = $('patente').value.trim().toUpperCase();
-    guardarEstado();
-    render();
-    ayuda.textContent = eraNueva
-      ? 'Carga iniciada. Ya podés registrar animales.'
-      : 'Capacidad actualizada a ' + kg(r.capacidad) + '.';
-    if (eraNueva) document.querySelector('input[name="tipo"]').focus();
+    var r = L.validarCapacidad($('capacidad').value, L.sumarPesos(estado().animales));
+    if (!r.ok) return errorCapacidad(r.mensaje);
+
+    var patente = $('patente').value.trim().toUpperCase();
+    var eraNueva = !carga;
+    operar(eraNueva ? store.iniciar(r.capacidad, patente) : store.actualizar(r.capacidad, patente)).then(function (c) {
+      carga = c;
+      ayuda.classList.remove('is-error');
+      $('capacidad').classList.remove('is-invalid');
+      render();
+      ayuda.textContent = eraNueva
+        ? 'Carga iniciada. Ya podés registrar animales.'
+        : 'Datos del camión actualizados (' + kg(c.capacidad) + ').';
+      if (eraNueva) document.querySelector('input[name="tipo"]').focus();
+    }, function (err) { errorCapacidad(err.mensaje); });
   });
 
-  // Reiniciar en dos pasos (sin ventanas emergentes del navegador).
-  var timerReinicio = null;
-  $('btnReiniciar').addEventListener('click', function () {
-    var btn = this;
-    if (!btn.classList.contains('is-confirm')) {
-      btn.classList.add('is-confirm');
-      btn.textContent = '¿Vaciar todo? Confirmar';
-      timerReinicio = setTimeout(function () {
-        btn.classList.remove('is-confirm');
-        btn.textContent = 'Reiniciar carga';
-      }, 4000);
-      return;
-    }
-    clearTimeout(timerReinicio);
-    btn.classList.remove('is-confirm');
-    btn.textContent = 'Reiniciar carga';
-    estado = { capacidad: 0, patente: '', animales: [] };
+  function errorCapacidad(msg) {
+    var ayuda = $('capacidadAyuda');
+    ayuda.textContent = msg;
+    ayuda.classList.add('is-error');
+    $('capacidad').classList.add('is-invalid');
+    $('capacidad').focus();
+  }
+
+  /* Botones en dos pasos (sin ventanas emergentes del navegador). */
+  function dosPasos(btn, textoConfirmar, accion) {
+    var original = btn.textContent;
+    var timer = null;
+    btn.addEventListener('click', function () {
+      if (ocupado) return;
+      if (!btn.classList.contains('is-confirm')) {
+        btn.classList.add('is-confirm');
+        btn.textContent = textoConfirmar;
+        timer = setTimeout(function () { btn.classList.remove('is-confirm'); btn.textContent = original; }, 4000);
+        return;
+      }
+      clearTimeout(timer);
+      btn.classList.remove('is-confirm');
+      btn.textContent = original;
+      accion();
+    });
+  }
+
+  // Cerrar carga: queda en el historial como "cerrada".
+  dosPasos($('btnCerrar'), '¿Cerrar el viaje? Confirmar', function () {
+    operar(store.cerrar($('observaciones').value.trim())).then(function (fin) {
+      finalizada(fin, 'Carga cerrada',
+        fin.animales.length + (fin.animales.length === 1 ? ' animal · ' : ' animales · ') + kg(L.sumarPesos(fin.animales)) +
+        '. Quedó guardada en el historial.');
+    }, errorGeneral);
+  });
+
+  // Cancelar carga: queda en el historial como "cancelada".
+  dosPasos($('btnReiniciar'), '¿Descartar la carga? Confirmar', function () {
+    operar(store.cancelar()).then(function (fin) {
+      finalizada(fin, 'Carga cancelada', 'Ingresá la capacidad del próximo camión.');
+    }, errorGeneral);
+  });
+
+  function finalizada(fin, titulo, texto) {
+    ultimaFinalizada = fin;
+    carga = null;
     ultimoEliminado = null;
-    guardarEstado();
     $('capacidad').value = '';
     $('patente').value = '';
-    $('capacidadAyuda').textContent = 'Carga reiniciada. Ingresá la capacidad del próximo camión.';
-    ocultarMensaje();
+    $('observaciones').value = '';
+    $('capacidadAyuda').textContent = 'Dato obligatorio: la consigna no fija la capacidad, la define el usuario.';
     render();
+    mostrarMensaje(fin.estado === 'cerrada' ? 'ok' : 'info', '<strong>' + titulo + '</strong><span>' + esc(texto) +
+      (fin.estado === 'cerrada' ? ' <button type="button" class="link-btn" id="btnImprimirFinal">Imprimir planilla</button>' +
+        ' · <a class="link-btn" href="historial.html">Ver historial</a>' : '') + '</span>', true);
     $('capacidad').focus();
-  });
+  }
 
   /* ---------- RF-02 a RF-06: registro de animal ---------- */
   function tipoSeleccionado() {
@@ -134,48 +175,41 @@
     return r ? r.value : '';
   }
 
+  function botonRegistrar(confirmar) {
+    $('btnRegistrar').textContent = confirmar ? 'Confirmar igualmente' : 'Registrar animal';
+    $('btnRegistrar').classList.toggle('btn--warn', !!confirmar);
+  }
+
   function resetConfirmacion() {
     if (pendienteConfirmar) {
       pendienteConfirmar = null;
-      $('btnRegistrar').textContent = 'Registrar animal';
-      $('btnRegistrar').classList.remove('btn--warn');
+      botonRegistrar(false);
       ocultarMensaje();
     }
   }
 
   $('formAnimal').addEventListener('submit', function (e) {
     e.preventDefault();
-
-    // Doble clic: si se acaba de registrar y el campo quedó vacío, ignorar el 2.º envío
-    // para no tapar el mensaje verde con un error.
+    if (ocupado) return;
+    // Doble clic: si se acaba de registrar y el campo quedó vacío, ignorar el 2.º envío.
     if (!$('peso').value.trim() && Date.now() - ultimoRegistro < ESPERA_DOBLE_CLIC) return;
-    var datos = {
-      tipo: tipoSeleccionado(),
-      peso: $('peso').value,
-      caravana: $('caravana').value
-    };
 
-    var r = L.evaluarRegistro(estado, datos);
+    var datos = { tipo: tipoSeleccionado(), peso: $('peso').value, caravana: $('caravana').value };
+    var r = L.evaluarRegistro(estado(), datos);
 
     if (!r.ok) {
       pendienteConfirmar = null;
-      $('btnRegistrar').textContent = 'Registrar animal';
-      $('btnRegistrar').classList.remove('btn--warn');
-
+      botonRegistrar(false);
       if (r.motivo === 'excede') {
-        mostrarMensaje('error',
-          '<strong>' + esc(r.mensaje) + '</strong>' +
-          '<span>Con este animal el total sería ' + kg(r.propuesto) + ' (excede por ' + kg(r.exceso) + '). ' +
-          'No se agregó. Disponible: ' + kg(L.resumen(estado).disponible) + '.</span>', true);
-        pintarCamion(r.peso);
-        sacudir($('seccion-camion'));
+        mostrarExceso(r.peso, r.propuesto, r.exceso);
+        store.rechazo({ tipo: datos.tipo, peso: String(r.peso), motivo: 'excede' });
       } else if (r.motivo === 'sin_capacidad') {
         mostrarMensaje('error', '<strong>' + esc(r.mensaje) + '</strong>', true);
         $('capacidad').focus();
       } else {
-        mostrarMensaje('error', '<strong>' + esc(r.mensaje) + '</strong>' +
-          '<span>' + esc(r.detalle || '') + '</span>', true);
+        mostrarMensaje('error', '<strong>' + esc(r.mensaje) + '</strong><span>' + esc(r.detalle || '') + '</span>', true);
         marcarInvalidos(datos);
+        if (datos.tipo || datos.peso.trim()) store.rechazo({ tipo: datos.tipo, peso: datos.peso, motivo: 'invalido' });
       }
       return;
     }
@@ -189,29 +223,51 @@
         '<strong>Revisá el dato: ' + kg(r.peso) + ' está fuera del rango orientativo</strong>' +
         '<span>Rango habitual de ' + t.nombre.toLowerCase() + ': ' + kg(t.min) + ' – ' + kg(t.max) +
         '. Si el peso es correcto, presioná “Confirmar igualmente”.</span>', true);
-      $('btnRegistrar').textContent = 'Confirmar igualmente';
-      $('btnRegistrar').classList.add('btn--warn');
+      botonRegistrar(true);
       return;
     }
 
-    var res = L.registrarAnimal(estado, datos);
-    estado = Object.assign({}, estado, { animales: res.estado.animales });
-    guardarEstado();
-
-    pendienteConfirmar = null;
-    ultimoRegistro = Date.now();
-    $('btnRegistrar').textContent = 'Registrar animal';
-    $('btnRegistrar').classList.remove('btn--warn');
-    mostrarMensaje('ok', '<strong>' + esc(r.mensaje) + '</strong>' +
-      '<span>' + L.nombreTipo(datos.tipo) + ' · ' + kg(r.peso) +
-      '. Quedan ' + kg(r.disponible) + ' disponibles.</span>');
-
-    $('peso').value = '';
-    $('caravana').value = '';
-    actualizarPreview();
-    render(res.estado.animales[res.estado.animales.length - 1].id);
-    $('peso').focus();
+    operar(store.registrar({
+      tipo: datos.tipo,
+      peso: r.peso,
+      caravana: datos.caravana.trim(),
+      fueraDeRango: !!r.advertenciaRango
+    })).then(function (res) {
+      carga = res.carga;
+      pendienteConfirmar = null;
+      ultimoRegistro = Date.now();
+      botonRegistrar(false);
+      var s = L.resumen(estado());
+      mostrarMensaje('ok', '<strong>' + esc(L.MENSAJES.OK) + '</strong>' +
+        '<span>' + L.nombreTipo(datos.tipo) + ' · ' + kg(r.peso) + '. Quedan ' + kg(s.disponible) + ' disponibles.</span>');
+      $('peso').value = '';
+      $('caravana').value = '';
+      actualizarPreview();
+      render(res.id);
+      $('peso').focus();
+    }, function (err) {
+      pendienteConfirmar = null;
+      botonRegistrar(false);
+      if (err.motivo === 'excede') {
+        // Otro dispositivo cargó en la misma carga: se muestra el total real.
+        if (err.carga) carga = err.carga;
+        render();
+        mostrarExceso(r.peso, err.propuesto, err.exceso);
+      } else {
+        errorGeneral(err);
+      }
+    });
   });
+
+  function mostrarExceso(peso, propuesto, exceso) {
+    var s = L.resumen(estado());
+    mostrarMensaje('error',
+      '<strong>' + esc(L.MENSAJES.EXCEDE) + '</strong>' +
+      '<span>' + (propuesto ? 'Con este animal el total sería ' + kg(propuesto) + ' (excede por ' + kg(exceso) + '). ' : '') +
+      'No se agregó. Disponible: ' + kg(s.disponible) + '.</span>', true);
+    pintarCamion(peso);
+    sacudir($('seccion-camion'));
+  }
 
   function marcarInvalidos(datos) {
     var pn = L.parsearPeso(datos.peso);
@@ -260,38 +316,41 @@
   /* ---------- RF-09: eliminar y deshacer ---------- */
   $('tablaAnimales').addEventListener('click', function (e) {
     var btn = e.target.closest('[data-eliminar]');
-    if (!btn) return;
+    if (!btn || ocupado) return;
     var id = btn.getAttribute('data-eliminar');
-    var idx = estado.animales.findIndex(function (a) { return a.id === id; });
-    if (idx === -1) return;
-    ultimoEliminado = { animal: estado.animales[idx], indice: idx };
-    estado = Object.assign({}, estado, L.eliminarAnimal(estado, id));
-    guardarEstado();
-    render();
-    mostrarMensaje('info', '<strong>Registro eliminado</strong><span>Se recalcularon los totales. ' +
-      '<button type="button" class="link-btn" id="btnDeshacer">Deshacer</button></span>');
+    operar(store.eliminar(id)).then(function (c) {
+      carga = c;
+      ultimoEliminado = id;
+      render();
+      mostrarMensaje('info', '<strong>Registro eliminado</strong><span>Se recalcularon los totales. ' +
+        '<button type="button" class="link-btn" id="btnDeshacer">Deshacer</button></span>');
+    }, errorGeneral);
   });
 
   $('mensaje').addEventListener('click', function (e) {
-    if (e.target.id !== 'btnDeshacer' || !ultimoEliminado) return;
-    var a = ultimoEliminado.animal;
-    if (L.redondear(L.sumarPesos(estado.animales) + a.peso) > estado.capacidad) {
-      mostrarMensaje('error', '<strong>' + L.MENSAJES.EXCEDE + '</strong><span>No se puede restaurar el registro.</span>', true);
+    if (e.target.id === 'btnImprimirFinal' && ultimaFinalizada) {
+      UI.imprimirPlanilla(ultimaFinalizada);
       return;
     }
-    var lista = estado.animales.slice();
-    lista.splice(ultimoEliminado.indice, 0, a);
-    estado = Object.assign({}, estado, { animales: lista });
-    ultimoEliminado = null;
-    guardarEstado();
-    render(a.id);
-    mostrarMensaje('ok', '<strong>Registro restaurado</strong>');
+    if (e.target.id !== 'btnDeshacer' || !ultimoEliminado || ocupado) return;
+    var id = ultimoEliminado;
+    operar(store.restaurar(id)).then(function (c) {
+      carga = c;
+      ultimoEliminado = null;
+      render(id);
+      mostrarMensaje('ok', '<strong>Registro restaurado</strong>');
+    }, function (err) {
+      if (err.motivo === 'excede') {
+        mostrarMensaje('error', '<strong>' + esc(L.MENSAJES.EXCEDE) + '</strong><span>No se puede restaurar el registro.</span>', true);
+      } else errorGeneral(err);
+    });
   });
 
   /* ---------- Render ---------- */
   function render(idNuevo) {
-    var s = L.resumen(estado);
-    var configurado = s.capacidad > 0;
+    var e = estado();
+    var s = L.resumen(e);
+    var configurado = !!carga;
 
     // Indicadores
     $('kpiCargado').textContent = kg(s.cargado);
@@ -302,12 +361,12 @@
     $('kpiCantidad').textContent = s.cantidad;
     $('disponibleMini').textContent = configurado ? 'Disponible: ' + kg(s.disponible) : '';
 
-    var conteo = { vaca: 0, toro: 0, oveja: 0 };
-    estado.animales.forEach(function (a) { conteo[a.tipo] = (conteo[a.tipo] || 0) + 1; });
-    var partes = [];
-    if (conteo.vaca) partes.push(conteo.vaca + (conteo.vaca === 1 ? ' vaca' : ' vacas'));
-    if (conteo.toro) partes.push(conteo.toro + (conteo.toro === 1 ? ' toro' : ' toros'));
-    if (conteo.oveja) partes.push(conteo.oveja + (conteo.oveja === 1 ? ' oveja' : ' ovejas'));
+    var conteo = {};
+    e.animales.forEach(function (a) { conteo[a.tipo] = (conteo[a.tipo] || 0) + 1; });
+    var plural = { vaca: 'vacas', toro: 'toros', oveja: 'ovejas' };
+    var partes = Object.keys(conteo).map(function (t) {
+      return conteo[t] + ' ' + (conteo[t] === 1 ? L.nombreTipo(t).toLowerCase() : (plural[t] || L.nombreTipo(t).toLowerCase()));
+    });
     $('kpiDesglose').textContent = partes.length ? partes.join(' · ') : 'Sin registros';
 
     // Estado general
@@ -317,17 +376,19 @@
     pill.dataset.nivel = configurado ? s.nivel : 'off';
 
     var chip = $('chipPatente');
-    chip.hidden = !estado.patente;
-    chip.textContent = estado.patente;
+    chip.hidden = !(carga && carga.patente);
+    chip.textContent = carga ? carga.patente : '';
 
     // Configuración
-    $('configBadge').textContent = configurado ? 'Configurado' : 'Pendiente';
+    $('configBadge').textContent = configurado ? 'Carga en curso' : 'Pendiente';
     $('configBadge').classList.toggle('is-done', configurado);
-    $('btnConfig').textContent = configurado ? 'Actualizar capacidad' : 'Iniciar carga';
-    $('btnReiniciar').hidden = !configurado;
-    if (configurado && document.activeElement !== $('capacidad')) {
+    $('btnConfig').textContent = configurado ? 'Actualizar datos' : 'Iniciar carga';
+    $('bloqueFinalizar').hidden = !configurado;
+    $('btnCerrar').disabled = !configurado || s.cantidad === 0;
+    $('btnCerrar').title = s.cantidad === 0 ? 'Registrá al menos un animal para cerrar la carga' : '';
+    if (configurado && document.activeElement !== $('capacidad') && document.activeElement !== $('patente')) {
       $('capacidad').value = s.capacidad.toLocaleString('es-AR', { maximumFractionDigits: 2 });
-      $('patente').value = estado.patente || '';
+      $('patente').value = carga.patente || '';
     }
     $('seccion-config').classList.toggle('card--highlight', !configurado);
     $('formAnimal').classList.toggle('is-disabled', !configurado);
@@ -347,18 +408,17 @@
 
   // Dibuja los animales dentro de la jaula. `pesoRechazado` muestra el exceso en rojo.
   function pintarCamion(pesoRechazado) {
+    var e = estado();
     var g = $('truckSegments');
-    var cap = estado.capacidad;
+    var cap = e.capacidad;
     var html = '';
     var x = X_CAJA;
     if (cap > 0) {
-      estado.animales.forEach(function (a, i) {
+      e.animales.forEach(function (a, i) {
         var w = (a.peso / cap) * ANCHO_CAJA;
         html += '<g class="seg seg--' + esc(a.tipo) + '"><title>' + (i + 1) + '. ' + esc(L.nombreTipo(a.tipo)) + ' · ' + kg(a.peso) + '</title>' +
           '<rect x="' + x.toFixed(2) + '" y="34" width="' + Math.max(w, 1).toFixed(2) + '" height="164"/>';
-        if (w > 46) {
-          html += '<text x="' + (x + w / 2).toFixed(2) + '" y="186" text-anchor="middle">' + Math.round(a.peso) + '</text>';
-        }
+        if (w > 46) html += '<text x="' + (x + w / 2).toFixed(2) + '" y="186" text-anchor="middle">' + Math.round(a.peso) + '</text>';
         html += '</g>';
         x += w;
       });
@@ -374,7 +434,7 @@
         if (r) r.remove();
       }, 2200);
     }
-    var s = L.resumen(estado);
+    var s = L.resumen(e);
     var pct = $('truckPct');
     pct.textContent = cap > 0 ? Math.round(s.porcentaje) + '%' : 'Sin capacidad';
     pct.classList.toggle('is-small', !cap);
@@ -382,12 +442,11 @@
   }
 
   function pintarTabla(idNuevo) {
-    var tbody = $('tablaAnimales');
+    var e = estado();
     var acumulado = 0;
-    tbody.innerHTML = estado.animales.map(function (a, i) {
+    $('tablaAnimales').innerHTML = e.animales.map(function (a, i) {
       acumulado = L.redondear(acumulado + a.peso);
       var nombre = esc(L.nombreTipo(a.tipo));
-      var hora = new Date(a.hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       var aviso = L.fueraDeRango(a.tipo, a.peso)
         ? ' <span class="tag tag--warn" title="Fuera del rango orientativo">revisado</span>' : '';
       return '<tr' + (a.id === idNuevo ? ' class="is-new"' : '') + '>' +
@@ -396,20 +455,22 @@
         '<td class="mono">' + (a.caravana ? esc(a.caravana) : '<span class="muted">—</span>') + '</td>' +
         '<td class="num mono">' + kg(a.peso) + '</td>' +
         '<td class="num mono muted">' + kg(acumulado) + '</td>' +
-        '<td class="mono muted">' + hora + '</td>' +
+        '<td class="mono muted">' + UI.hora(a.hora) + '</td>' +
         '<td class="actions"><button type="button" class="icon-btn icon-btn--danger" data-eliminar="' + esc(a.id) + '" ' +
         'title="Eliminar registro" aria-label="Eliminar ' + nombre + ' de ' + kg(a.peso) + '">' +
         '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></td>' +
         '</tr>';
     }).join('');
 
-    var vacia = estado.animales.length === 0;
+    var vacia = e.animales.length === 0;
     $('listaVacia').hidden = !vacia;
     document.querySelector('.table').classList.toggle('is-empty', vacia);
-    $('totalTabla').textContent = kg(L.sumarPesos(estado.animales));
+    $('totalTabla').textContent = kg(L.sumarPesos(e.animales));
+    $('btnImprimir').disabled = !carga;
+    $('btnCsv').disabled = vacia;
     $('listaResumen').textContent = vacia
       ? 'Todavía no hay animales registrados.'
-      : estado.animales.length + (estado.animales.length === 1 ? ' animal aceptado' : ' animales aceptados') + ' en esta carga.';
+      : e.animales.length + (e.animales.length === 1 ? ' animal aceptado' : ' animales aceptados') + ' en esta carga.';
   }
 
   function sacudir(el) {
@@ -418,28 +479,17 @@
     el.classList.add('shake');
   }
 
-  /* ---------- Planilla imprimible ---------- */
+  /* ---------- Planilla imprimible y CSV ---------- */
   $('btnImprimir').addEventListener('click', function () {
-    var s = L.resumen(estado);
-    var filas = estado.animales.map(function (a, i) {
-      return '<tr><td>' + (i + 1) + '</td><td>' + esc(L.nombreTipo(a.tipo)) + '</td><td>' + (esc(a.caravana) || '—') +
-        '</td><td class="num">' + kg(a.peso) + '</td></tr>';
-    }).join('');
-    $('planilla').innerHTML =
-      '<h1>NexoRural · Planilla de carga</h1>' +
-      '<p>Fecha: ' + new Date().toLocaleString('es-AR') + ' · Operador: ' + esc(operador) +
-      (estado.patente ? ' · Patente: ' + esc(estado.patente) : '') + '</p>' +
-      '<p>Capacidad: <b>' + kg(s.capacidad) + '</b> · Cargado: <b>' + kg(s.cargado) + '</b> · Disponible: <b>' + kg(s.disponible) +
-      '</b> · Animales: <b>' + s.cantidad + '</b></p>' +
-      '<table><thead><tr><th>N.º</th><th>Tipo</th><th>Caravana</th><th class="num">Peso</th></tr></thead><tbody>' +
-      (filas || '<tr><td colspan="4">Sin animales registrados</td></tr>') + '</tbody></table>' +
-      '<p class="firma">Firma del encargado: ______________________________</p>' +
-      '<p class="pie">Generado con NexoRural — AGO Soluciones</p>';
-    window.print();
+    if (carga) UI.imprimirPlanilla(carga);
+  });
+  $('btnCsv').addEventListener('click', function () {
+    if (!carga) return;
+    UI.descargarCSV('carga-' + (carga.patente || carga.id) + '.csv', UI.ENCABEZADOS_ANIMALES, UI.csvDeCarga(carga));
   });
 
   /* ---------- Navegación lateral: resaltar sección visible ---------- */
-  var links = document.querySelectorAll('.side-nav a');
+  var links = document.querySelectorAll('.side-nav a[href^="#"]');
   if ('IntersectionObserver' in window) {
     var obs = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
@@ -453,7 +503,4 @@
       obs.observe($(id));
     });
   }
-
-  render();
-  if (!estado.capacidad) $('capacidad').focus();
 })();

@@ -194,7 +194,8 @@
         tipo: String(a.tipo || ''),
         peso: redondear(a.peso),
         caravana: typeof a.caravana === 'string' ? a.caravana : '',
-        hora: a.hora || new Date().toISOString()
+        hora: a.hora || new Date().toISOString(),
+        eliminado: !!a.eliminado
       };
     });
     return {
