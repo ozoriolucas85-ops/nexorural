@@ -16,6 +16,10 @@ const NEXO_TIPOS_INICIALES = [
 ];
 
 $CONFIG = require __DIR__ . '/config.php';
+// En un hosting, los datos propios van en config.local.php (no se sube a GitHub).
+if (is_file(__DIR__ . '/config.local.php')) {
+    $CONFIG = array_merge($CONFIG, require __DIR__ . '/config.local.php');
+}
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store');

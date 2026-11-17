@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="es-AR"><head><meta charset="utf-8"><title>Prueba de punta a punta · servidor · NexoRural</title></head>
+<body><pre id="o">Ejecutando…</pre>
+<script>
+/*
+ * Prueba de punta a punta en MODO SERVIDOR (PHP + MySQL).
+ * Se ejecuta con tests\correr-pruebas.bat, que crea una base TEMPORAL vacía.
+ * Por seguridad, si la base ya tiene usuarios NO hace nada.
+ */
+var R = [], f, errs = [];
+function ok(n, c, x) { R.push((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  [' + x + ']' : '')); }
+var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+function load(src) {
+  return new Promise(function (r) {
+    f.onload = function () { f.contentWindow.addEventListener('error', function (e) { errs.push(src + ': ' + e.message); }); r(); };
+    f.src = src;
+  }).then(function () { return sleep(700); });
+}
+function nav() { return new Promise(function (r) { f.onload = function () { r(); }; }).then(function () { return sleep(700); }); }
+var W, D, $;
+function bind() { W = f.contentWindow; D = f.contentDocument; $ = function (i) { return D.getElementById(i); }; }
+function sub(id) { $(id).dispatchEvent(new W.Event('submit', { cancelable: true, bubbles: true })); }
+function val(id, v) { $(id).value = v; $(id).dispatchEvent(new W.Event('input', { bubbles: true })); }
+async function cap(v, p) { $('capacidad').value = v; if (p !== undefined) $('patente').value = p; sub('formConfig'); await sleep(400); }
+async function an(t, p, confirmar) {
+  D.querySelector('input[name=tipo][value="' + t + '"]').checked = true;
+  val('peso', p); sub('formAnimal'); await sleep(450);
+  if (confirmar && $('btnRegistrar').textContent === 'Confirmar igualmente') { sub('formAnimal'); await sleep(450); }
+  await sleep(1550); // evita la protección contra doble clic
+}
+function msg() { return $('mensaje').hidden ? '-' : $('mensaje').querySelector('strong').textContent; }
+function filas() { return D.querySelectorAll('#tablaAnimales tr').length; }
+async function get(u) { return (await fetch(u, { credentials: 'same-origin' })).json(); }
+async function post(u, d) {
+  return (await fetch(u, { method: 'POST', credentials: 'same-origin',
+    headers: { 'X-Requested-With': 'NexoRural', 'Content-Type': 'application/json' }, body: JSON.stringify(d || {}) })).json();
+}
+
+(async function () {
+  var estado = await get('../../api/auth.php?accion=estado');
+  if (!estado.ok || estado.instalado) {
+    document.getElementById('o').textContent = 'ABORTADO: esta prueba solo corre sobre una base vacía. Usá tests\\correr-pruebas.bat';
+    return;
+  }
+  f = document.createElement('iframe'); f.style.cssText = 'width:1300px;height:900px'; document.body.appendChild(f);
+
+  /* ---------- Instalación y login ---------- */
+  await load('../../index.html'); bind();
+  ok('sin usuarios muestra "Primer ingreso"', $('loginTitulo').textContent === 'Primer ingreso' && !$('campoNombre').hidden);
+  $('nombre').value = 'Admin Prueba'; $('usuario').value = 'admin_prueba'; $('clave').value = 'secreto1'; $('clave2').value = 'otro';
+  sub('loginForm'); await sleep(150);
+  ok('contraseñas distintas → error', /coinciden/.test($('loginError').textContent));
+  $('clave2').value = 'secreto1'; var p = nav(); sub('loginForm'); await p; bind();
+  ok('instalar crea el administrador y entra al panel', /panel\.html$/.test(W.location.pathname));
+  ok('indicador "Conectado"', $('chipModo').textContent === 'Conectado');
+  ok('el administrador ve "Administración"', !$('navUsuarios').hidden);
+
+  /* ---------- Carga: reglas principales (sección 12 del análisis) ---------- */
+  ok('sin carga: registrar bloqueado', $('btnRegistrar').disabled);
+  await cap('70.000'); ok('capacidad 70.000 rechazada (tope 60.000)', $('capacidadAyuda').classList.contains('is-error'));
+  await cap('5.000', 'ab 123 cd');
+  ok('iniciar carga de 5.000 kg', $('kpiCapacidad').textContent === '5.000 kg' && $('chipPatente').textContent === 'AB123CD');
+  for (var i = 0; i < 5; i++) await an('vaca', '800');
+  ok('5 vacas de 800 = 4.000 kg', $('kpiCargado').textContent === '4.000 kg', $('kpiCargado').textContent);
+  await an('vaca', '800'); ok('4.000 + 800 → acepta; quedan 200', $('kpiDisponible').textContent === '200 kg');
+  await an('toro', '600'); ok('4.800 + 600 → "Capacidad máxima superada"; total sin cambios',
+    msg() === 'Capacidad máxima superada' && $('kpiCargado').textContent === '4.800 kg');
+  await an('vaca', '0,001'); ok('peso 0,001 → dato inválido', msg() === 'Ingrese datos válidos');
+  await an('toro', '2.500'); ok('peso 2.500 → dato inválido (tope 2.000)', msg() === 'Ingrese datos válidos');
+  await an('oveja', '200'); ok('oveja 200 (fuera de rango) pide confirmar', $('btnRegistrar').textContent === 'Confirmar igualmente');
+  val('peso', '150'); ok('cambiar el peso cancela la confirmación', $('btnRegistrar').textContent === 'Registrar animal');
+  await an('oveja', '150'); await an('oveja', '50');
+  ok('llenado exacto: 5.000 kg, disponible 0', $('kpiDisponible').textContent === '0 kg' && $('estadoPill').textContent === 'Capacidad completa');
+  await load('../../panel.html'); bind();
+  ok('al recargar, los datos vienen de la base', $('kpiCargado').textContent === '5.000 kg' && filas() === 8);
+  var c = await get('../../api/carga.php?accion=actual');
+  ok('los rechazos quedan auditados', c.carga.rechazos >= 3, 'rechazos ' + c.carga.rechazos);
+
+  /* ---------- Corregir, eliminar, deshacer ---------- */
+  D.querySelectorAll('[data-editar]')[0].click(); await sleep(200);
+  val('edPeso', '900'); sub('formEdicion'); await sleep(500);
+  ok('corregir que excede: aviso y sin cambios', /Capacidad máxima superada/.test($('edMensaje').textContent) && $('kpiCargado').textContent === '5.000 kg');
+  val('edPeso', '750'); sub('formEdicion'); await sleep(500);
+  ok('corregir 800 → 750', msg() === 'Registro corregido' && $('kpiCargado').textContent === '4.950 kg');
+  D.querySelector('[data-eliminar]').click(); await sleep(500);
+  ok('eliminar → 4.200 kg', $('kpiCargado').textContent === '4.200 kg');
+  $('btnDeshacer').click(); await sleep(500); ok('deshacer → 4.950 kg', $('kpiCargado').textContent === '4.950 kg');
+  await cap('1.000'); ok('no deja bajar la capacidad debajo de lo cargado', $('capacidadAyuda').classList.contains('is-error'));
+
+  /* ---------- Cerrar, imprimir, cancelar ---------- */
+  $('observaciones').value = 'Destino: Liniers'; $('btnCerrar').click(); $('btnCerrar').click(); await sleep(600);
+  ok('cerrar carga', msg() === 'Carga cerrada' && $('kpiCapacidad').textContent === '—');
+  W.print = function () { W.__impreso = true; }; $('btnImprimirFinal').click();
+  ok('planilla de la carga cerrada', W.__impreso && $('planilla').querySelectorAll('tbody tr').length === 8);
+  await cap('3.000'); await an('toro', '900');
+  $('btnReiniciar').click(); $('btnReiniciar').click(); await sleep(600); ok('cancelar carga', msg() === 'Carga cancelada');
+
+  /* ---------- Administración: categorías, camiones, usuarios ---------- */
+  await load('../../administracion.html'); bind();
+  ok('Administración visible para el administrador', !$('contenidoUsuarios').hidden && !$('contenidoCamiones').hidden && !$('contenidoTipos').hidden);
+  val('tNombre', 'Ternero'); val('tMin', '80'); val('tMax', '250'); sub('formTipo'); await sleep(500);
+  ok('crear categoría Ternero', /Ternero/.test($('cuerpoTip').textContent));
+  val('tNombre', 'Mala'); val('tMin', '300'); val('tMax', '100'); sub('formTipo'); await sleep(300);
+  ok('rango inválido rechazado', /mínimo/.test($('tFormMensaje').textContent));
+  D.querySelector('[data-tip-activo="oveja"]').click(); await sleep(500);
+  ok('desactivar Oveja', /Inactiva/.test(D.querySelector('[data-tip-activo="oveja"]').closest('tr').textContent));
+  val('cPatente', 'ac 456 fg'); val('cCapacidad', '7.000'); val('cDescripcion', 'Mercedes 1634'); sub('formCamion'); await sleep(500);
+  ok('guardar camión AC456FG', /AC456FG/.test($('cuerpoCam').textContent));
+  val('cPatente', 'AC456FG'); val('cCapacidad', '9.000'); sub('formCamion'); await sleep(500);
+  ok('patente duplicada rechazada', /Ya hay un camión/.test($('cFormMensaje').textContent));
+  val('uNombre', 'Capataz Prueba'); val('uUsuario', 'capataz_prueba'); val('uClave', 'capataz1'); sub('formUsuario'); await sleep(500);
+  ok('crear capataz', D.querySelectorAll('#cuerpoUsr tr').length === 2);
+
+  /* ---------- Panel con catálogo y camión guardado ---------- */
+  await load('../../panel.html'); bind();
+  var tipos = [].map.call(D.querySelectorAll('input[name=tipo]'), function (r) { return r.value; }).join(',');
+  ok('categorías en el panel: vaca, toro, ternero', tipos === 'vaca,toro,ternero', tipos);
+  $('camionGuardado').value = $('camionGuardado').options[1].value; $('camionGuardado').dispatchEvent(new W.Event('change'));
+  ok('elegir camión completa capacidad y patente', $('capacidad').value === '7.000' && $('patente').value === 'AC456FG');
+  sub('formConfig'); await sleep(600);
+  await an('ternero', '150'); await an('toro', '980');
+  ok('desglose con plurales y categoría nueva', $('kpiDesglose').textContent === '1 ternero · 1 toro', $('kpiDesglose').textContent);
+
+  /* ---------- Historial ---------- */
+  await load('../../historial.html'); bind();
+  ok('historial: 3 cargas', D.querySelectorAll('#cuerpoHist tr').length === 3);
+  ok('totales del período', $('kCerradas').textContent === '1' && $('kKilos').textContent === '4.950 kg');
+  D.querySelector('#segEstado [data-estado=cancelada]').click(); await sleep(400);
+  ok('filtro "Canceladas"', D.querySelectorAll('#cuerpoHist tr').length === 1);
+  $('btnLimpiar').click(); await sleep(400);
+  var u = D.querySelectorAll('#cuerpoHist tr'); u[u.length - 1].click(); await sleep(500);
+  ok('detalle de la carga cerrada', D.querySelectorAll('#detCuerpo tbody tr').length === 8 && /Liniers/.test($('detCuerpo').textContent));
+
+  /* ---------- Mi contraseña ---------- */
+  await load('../../panel.html'); bind();
+  $('btnMiClave').click(); await sleep(200);
+  $('mcActual').value = 'mala'; $('mcNueva').value = 'nueva123'; $('mcNueva2').value = 'nueva123'; sub('formMiClave'); await sleep(500);
+  ok('cambiar contraseña: la actual incorrecta se rechaza', /no es correcta/.test($('mcMensaje').textContent));
+  $('mcActual').value = 'secreto1'; sub('formMiClave'); await sleep(600);
+  ok('cambiar contraseña', /actualizada/.test($('mcMensaje').textContent));
+  await sleep(1400);
+
+  /* ---------- Capataz ---------- */
+  p = nav(); $('btnSalir').click(); await p; bind();
+  $('usuario').value = 'capataz_prueba'; $('clave').value = 'mala'; sub('loginForm'); await sleep(500);
+  ok('contraseña incorrecta → error', /incorrectos/.test($('loginError').textContent));
+  $('clave').value = 'capataz1'; p = nav(); sub('loginForm'); await p; bind();
+  ok('el capataz entra y no ve Administración', /panel\.html$/.test(W.location.pathname) && $('navUsuarios').hidden);
+  ok('el capataz no ve la carga del administrador', $('kpiCapacidad').textContent === '—');
+  var r1 = await get('../../api/usuarios.php?accion=listar');
+  var r2 = await post('../../api/catalogo.php?accion=tipo_guardar', { nombre: 'X', min: 1, max: 2 });
+  ok('la API rechaza al capataz en usuarios y catálogos', r1.motivo === 'sin_permiso' && r2.motivo === 'sin_permiso');
+  var r3 = await post('../../api/carga.php?accion=cancelar', {});
+  ok('el capataz no puede cancelar una carga que no es suya', r3.ok === false && r3.motivo === 'sin_carga');
+  var r4 = await fetch('../../api/carga.php?accion=cancelar', { method: 'POST', credentials: 'same-origin', body: '{}' }).then(function (x) { return x.json(); });
+  ok('POST sin encabezado anti-CSRF → rechazado', r4.motivo === 'csrf');
+  p = nav(); $('btnSalir').click(); await p;
+  await load('../../panel.html'); await sleep(300);
+  ok('sin sesión, el panel vuelve al ingreso', /index\.html$/.test(f.contentWindow.location.pathname));
+
+  ok('sin errores de JavaScript', errs.length === 0, errs.join(' | '));
+  document.getElementById('o').textContent = R.join('\n');
+})().catch(function (e) { document.getElementById('o').textContent = R.join('\n') + '\nEXCEPCION: ' + e.message; });
+</script>
+</body></html>

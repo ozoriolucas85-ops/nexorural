@@ -5,6 +5,9 @@ Options -Indexes
 # Ocultar Git, archivos ocultos y los scripts de Windows (no son parte de la web).
 RedirectMatch 404 /\.git(/|$)
 RedirectMatch 404 /scripts/
+# Las pruebas de punta a punta solo corren con tests\correr-pruebas.bat (servidor de prueba propio).
+RedirectMatch 404 /tests/e2e/
+RedirectMatch 404 /tests/.*\.(ps1|bat)$
 <FilesMatch "^\.">
     Require all denied
 </FilesMatch>

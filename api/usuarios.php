@@ -60,6 +60,14 @@ switch (accion()) {
         responder(['ok' => true]);
 
     case 'red':
+        $host = strtolower(preg_replace('/:\d+$/', '', (string)($_SERVER['HTTP_HOST'] ?? '')));
+        $esLocal = $host === 'localhost' || preg_match('/^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)/', $host);
+        if (!$esLocal && $host !== '') {
+            // Publicado en internet: la dirección es la misma que se está usando.
+            $esq = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $ruta = rtrim(str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'] ?? '/api/x.php'))), '/') . '/';
+            responder(['ok' => true, 'publica' => true, 'urls' => [$esq . '://' . $_SERVER['HTTP_HOST'] . $ruta]]);
+        }
         // Direcciones para entrar desde celulares conectados al mismo wifi.
         $ips = array_values(array_filter(gethostbynamel(gethostname()) ?: [], function ($ip) {
             return (bool)preg_match('/^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/', $ip);

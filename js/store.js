@@ -99,7 +99,7 @@
       crearUsuario: function (d) { return post('usuarios.php', 'crear', d); },
       activarUsuario: function (id, activo) { return post('usuarios.php', 'activo', { id: id, activo: activo }); },
       cambiarClave: function (id, clave) { return post('usuarios.php', 'clave', { id: id, clave: clave }); },
-      direccionesRed: function () { return get('usuarios.php', 'red').then(function (j) { return j.urls; }); }
+      direccionesRed: function () { return get('usuarios.php', 'red'); }
     };
   }
 

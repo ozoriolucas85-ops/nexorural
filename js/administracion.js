@@ -33,11 +33,20 @@
   });
 
   function mostrarAccesoCelular() {
-    store.direccionesRed().then(function (urls) {
+    store.direccionesRed().then(function (r) {
+      var urls = r.urls;
       if (!urls || !urls.length) return;
       var url = urls[0];
+      if (r.publica) {
+        // Publicado en internet: se entra desde cualquier lugar con la dirección pública.
+        $('accesoCelular').querySelector('.muted').textContent =
+          'NexoRural está publicado en internet: se entra con esta dirección desde cualquier celular o computadora.';
+        $('urlAyuda').hidden = true;
+      }
       $('urlCelular').textContent = url;
-      $('btnWhatsapp').href = 'https://wa.me/?text=' + encodeURIComponent('Entrá a NexoRural desde el celular (conectado al wifi del campo): ' + url);
+      $('btnWhatsapp').href = 'https://wa.me/?text=' + encodeURIComponent(r.publica
+        ? 'Entrá a NexoRural: ' + url
+        : 'Entrá a NexoRural desde el celular (conectado al wifi del campo): ' + url);
       $('accesoCelular').hidden = false;
       $('btnCopiarUrl').addEventListener('click', function () {
         var b = this;

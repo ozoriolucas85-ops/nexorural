@@ -27,6 +27,10 @@ Probado en **MariaDB 10.4 (XAMPP)**. También sirve en MySQL 8.0.16 o posterior.
 
 ## 2. Diagrama de relaciones
 
+![Diagrama entidad-relación](diagrama-er.png)
+
+Resumen:
+
 ```
 usuarios 1───N cargas N───1 camiones (opcional)
                  │

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es-AR"><head><meta charset="utf-8"><title>Prueba de punta a punta · modo local · NexoRural</title></head>
+<body><pre id="o">Ejecutando…</pre>
+<script>
+/*
+ * Prueba de punta a punta en MODO LOCAL (sin servidor, datos en el navegador).
+ * Se ejecuta con tests\correr-pruebas.bat. Borra el almacenamiento del navegador
+ * de prueba (no el tuyo: el script usa un perfil de navegador temporal).
+ */
+var R = [], f, errs = [];
+function ok(n, c, x) { R.push((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  [' + x + ']' : '')); }
+var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+function load(src) {
+  return new Promise(function (r) {
+    f.onload = function () { f.contentWindow.addEventListener('error', function (e) { errs.push(src + ': ' + e.message); }); r(); };
+    f.src = src;
+  }).then(function () { return sleep(300); });
+}
+function nav() { return new Promise(function (r) { f.onload = function () { r(); }; }).then(function () { return sleep(300); }); }
+var W, D, $;
+function bind() { W = f.contentWindow; D = f.contentDocument; $ = function (i) { return D.getElementById(i); }; }
+function sub(id) { $(id).dispatchEvent(new W.Event('submit', { cancelable: true, bubbles: true })); }
+function val(id, v) { $(id).value = v; $(id).dispatchEvent(new W.Event('input', { bubbles: true })); }
+async function cap(v) { $('capacidad').value = v; sub('formConfig'); await sleep(80); }
+async function an(t, p, c) {
+  var r = D.querySelector('input[value="' + t + '"]');
+  if (r) r.checked = true; else D.querySelectorAll('input[name=tipo]').forEach(function (x) { x.checked = false; });
+  $('caravana').value = c || ''; val('peso', p); sub('formAnimal'); await sleep(80);
+}
+function msg() { return $('mensaje').hidden ? '-' : $('mensaje').querySelector('strong').textContent; }
+function guardados() {
+  var c = JSON.parse(W.localStorage.getItem('nexorural.carga') || 'null');
+  return c ? c.animales.filter(function (a) { return !a.eliminado; }) : [];
+}
+
+(async function () {
+  if (location.protocol !== 'file:') {
+    document.getElementById('o').textContent = 'ABORTADO: esta prueba se abre como archivo (file://). Usá tests\\correr-pruebas.bat';
+    return;
+  }
+  localStorage.clear(); sessionStorage.clear();
+  f = document.createElement('iframe'); f.style.cssText = 'width:1300px;height:900px'; document.body.appendChild(f);
+
+  await load('../../panel.html'); await sleep(200);
+  ok('sin sesión redirige al ingreso', /index\.html$/.test(f.contentWindow.location.pathname));
+  bind(); ok('el ingreso indica "Modo local"', /Modo local/.test($('loginModo').textContent));
+  $('usuario').value = 'Juan Pérez'; $('clave').value = 'x'; $('recordar').checked = false;
+  var p = nav(); sub('loginForm'); await p; bind();
+  ok('entra al panel', /panel\.html$/.test(W.location.pathname));
+  ok('indicador "Modo local"', $('chipModo').textContent === 'Modo local');
+  ok('categorías de fábrica: vaca, toro, oveja',
+    [].map.call(D.querySelectorAll('input[name=tipo]'), function (r) { return r.value; }).join(',') === 'vaca,toro,oveja');
+  ok('sin camiones guardados ni cambio de contraseña', $('campoCamion').hidden && !$('btnMiClave'));
+
+  await cap('999999999'); ok('capacidad absurda rechazada', $('capacidadAyuda').classList.contains('is-error'));
+  await cap('15.000'); ok('capacidad "15.000" = 15.000 kg', $('kpiCapacidad').textContent === '15.000 kg');
+  await an('toro', '1.100'); ok('peso "1.100" = 1.100 kg', guardados()[0] && guardados()[0].peso === 1100);
+  await sleep(1550); await an('vaca', '650,555'); ok('650,555 se redondea a 650,56', guardados()[1] && guardados()[1].peso === 650.56);
+  await sleep(1550); await an('vaca', '1,2,3'); ok('"1,2,3" rechazado', msg() === 'Ingrese datos válidos');
+  await an('ninguno', '500'); ok('sin tipo rechazado', msg() === 'Ingrese datos válidos');
+  await an('vaca', '600', '<img src=x onerror=alert(1)>'); ok('caravana con HTML se muestra como texto', !D.querySelector('#tablaAnimales img'));
+  sub('formAnimal'); sub('formAnimal'); await sleep(80);
+  ok('doble clic no tapa el mensaje de éxito', msg() === 'Animal registrado correctamente');
+
+  var antes = $('kpiCargado').textContent; await load('../../panel.html'); bind();
+  ok('los datos persisten al recargar', $('kpiCargado').textContent === antes, antes);
+
+  D.querySelectorAll('[data-editar]')[1].click(); await sleep(50); val('edPeso', '700'); sub('formEdicion'); await sleep(80);
+  ok('corregir 650,56 → 700', guardados()[1].peso === 700);
+  D.querySelector('[data-eliminar]').click(); await sleep(80); ok('eliminar', guardados().length === 2);
+  $('btnDeshacer').click(); await sleep(80); ok('deshacer', guardados().length === 3);
+
+  await cap('2.400'); await sleep(1550);
+  await an('oveja', '1'); ok('camión lleno (2.400): 1 kg más → "Capacidad máxima superada"', msg() === 'Capacidad máxima superada');
+
+  $('observaciones').value = 'Prueba local'; $('btnCerrar').click(); $('btnCerrar').click(); await sleep(100);
+  ok('cerrar carga', msg() === 'Carga cerrada' && !W.localStorage.getItem('nexorural.carga'));
+
+  await load('../../historial.html'); bind(); await sleep(100);
+  ok('historial local con la carga cerrada', D.querySelectorAll('#cuerpoHist tr').length === 1 && $('kKilos').textContent === '2.400 kg');
+  D.querySelector('#cuerpoHist tr').click(); await sleep(100);
+  ok('detalle local', D.querySelectorAll('#detCuerpo tbody tr').length === 3 && /Prueba local/.test($('detCuerpo').textContent));
+  var blob = null; W.URL.createObjectURL = function (b) { blob = b; return 'blob:x'; };
+  $('btnDetCsv').click(); await sleep(50);
+  var bytes = new Uint8Array(await blob.arrayBuffer());
+  ok('CSV para Excel (BOM UTF-8 y separador ;)', bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF && /;/.test(await blob.text()));
+  W.NexoUI.descargarCSV('x.csv', ['a'], [['=HYPERLINK("http://malo")'], [-5]]); await sleep(30);
+  var t2 = await blob.text(); ok('CSV neutraliza fórmulas pero no números negativos', /"'=HYPERLINK/.test(t2) && /"-5"/.test(t2));
+
+  await load('../../administracion.html'); bind();
+  ok('Administración en modo local muestra aviso', !$('aviso').hidden && $('contenidoUsuarios').hidden);
+
+  W.localStorage.setItem('nexorural.carga', '{{basura'); await load('../../panel.html'); bind();
+  ok('datos dañados no rompen la página', $('kpiCapacidad').textContent === '—');
+  W.localStorage.setItem('nexorural.carga', '{"capacidad":7000,"patente":"AB123CD","animales":[{"id":"1","tipo":"toro","peso":980,"caravana":"","hora":"2026-11-17T10:00:00Z"}]}');
+  await load('../../panel.html'); bind();
+  ok('lee datos guardados por la versión 1', $('kpiCargado').textContent === '980 kg' && $('chipPatente').textContent === 'AB123CD');
+
+  p = nav(); $('btnSalir').click(); await p;
+  ok('salir vuelve al ingreso', /index\.html$/.test(f.contentWindow.location.pathname));
+  ok('sin errores de JavaScript', errs.length === 0, errs.join(' | '));
+  document.getElementById('o').textContent = R.join('\n');
+})().catch(function (e) { document.getElementById('o').textContent = R.join('\n') + '\nEXCEPCION: ' + e.message; });
+</script>
+</body></html>

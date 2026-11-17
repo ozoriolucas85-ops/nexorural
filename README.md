@@ -6,6 +6,17 @@ Aplicación web para registrar el peso de cada animal antes de subirlo al camió
 
 ![Panel de carga](docs/capturas/panel.png)
 
+## Documentación de entrega
+
+| | |
+|---|---|
+| 📘 **[Manual de usuario (PDF)](docs/Manual_de_usuario_NexoRural.pdf)** | Paso a paso con capturas, problemas frecuentes y mensajes del sistema |
+| 🗂️ **[Diagrama entidad-relación](docs/diagrama-er.png)** | Tablas, relaciones, vista y triggers ([SVG](docs/diagrama-er.svg)) |
+| 🛢️ **[Guía de la base de datos](docs/GUIA_BASE_DE_DATOS.md)** | Cómo importarla y qué hace cada tabla |
+| 🌐 **[Publicar en internet](docs/PUBLICAR_ONLINE.md)** | Hosting gratuito con PHP + MySQL, paso a paso |
+| ✅ **Pruebas automáticas** | `tests\correr-pruebas.bat` (ver [Pruebas](#pruebas)) |
+| 📄 [Análisis informático original](docs/Analisis_informatico_control_carga_ganadera.docx) | Requisitos del proyecto |
+
 ## Dos formas de usarla
 
 | | **Con servidor (recomendado)** | **Modo local** |
@@ -42,13 +53,16 @@ En el celular, con una carga en curso, lo primero que aparece es el formulario d
 
 > La IP de la PC la asigna el router y puede cambiar. Si un día el celular no entra, revisá la dirección en **Administración**. Para que no cambie, se puede reservar la IP en el router.
 
-### Respaldos de la base de datos
+### Respaldos y scripts de mantenimiento
 
 | Script | Qué hace |
 |---|---|
 | `scripts\respaldo.bat` | Crea un respaldo completo en `Documentos\NexoRural-respaldos\` y borra los de más de 30 días |
 | `scripts\programar-respaldo.bat` | Programa el respaldo **todos los días a las 20:00** (si la PC estaba apagada, lo hace al encenderla) |
 | `scripts\restaurar-respaldo.bat` | Restaura un respaldo. Pide confirmar con **SI** y antes guarda una copia del estado actual |
+| `scripts\restablecer-clave.bat` | Emergencia: nueva contraseña para un usuario (por ejemplo, si el único administrador se la olvidó) |
+| `scripts\empaquetar-para-hosting.bat` | Arma el `.zip` y el SQL para publicar en un hosting ([guía](docs/PUBLICAR_ONLINE.md)) |
+| `scripts\habilitar-celulares.bat` | Permite entrar desde los celulares del wifi (una sola vez) |
 
 Copiá la carpeta `Documentos\NexoRural-respaldos` a un pendrive o a Google Drive/OneDrive cada tanto: si se rompe la PC, el respaldo tiene que estar en otro lado.
 
@@ -108,7 +122,7 @@ Extras: advertencia si el peso está fuera del rango orientativo (hay que confir
 - 5 intentos fallidos bloquean el usuario 5 minutos.
 - Sesión con cookie `HttpOnly` y `SameSite=Strict`, más un encabezado obligatorio en cada envío (protección CSRF).
 - Consultas preparadas con PDO (sin inyección SQL) y MySQL en modo estricto.
-- La regla de capacidad se valida **tres veces**: en el navegador, en PHP (bloqueando la carga para que dos celulares no la superen al mismo tiempo) y en la base (triggers).
+- La regla de capacidad se valida **tres veces**: en el navegador, en PHP (bloqueando la carga para que dos celulares no la superen al mismo tiempo) y en la base (triggers). Si un hosting no permite triggers, PHP sigue controlando todas las reglas.
 - Los archivos internos de `api/` no se pueden abrir desde el navegador (`api/.htaccess`).
 - El CSV neutraliza fórmulas para que no se ejecuten al abrirlo en Excel.
 
@@ -130,7 +144,7 @@ nexorural/
 │   ├── administracion.js   Administración
 │   └── login.js            Ingreso
 ├── api/                    Backend PHP 8 + MySQL (PDO)
-│   ├── config.php          Datos de conexión y límites
+│   ├── config.php          Datos de conexión y límites (en un hosting: config.local.php)
 │   ├── auth.php            Ingreso, salida y alta del primer administrador
 │   ├── carga.php           Carga en curso (iniciar, registrar, eliminar, cerrar…)
 │   ├── catalogo.php        Categorías de animales y camiones guardados
@@ -139,16 +153,22 @@ nexorural/
 ├── manifest.webmanifest    Para instalarla en el celular ("Agregar a pantalla de inicio")
 ├── .htaccess               Bloquea .git y scripts/ desde la web
 ├── assets/                 Logo, íconos, fondo del ingreso y tipografías (fonts/)
-├── scripts/                Windows: habilitar celulares, respaldo, programar y restaurar
+├── scripts/                Windows: celulares, respaldos, restablecer clave, empaquetar para hosting, diagrama ER
 ├── database/
 │   ├── nexorural_estructura.sql   Estructura para phpMyAdmin
 │   └── datos_iniciales.sql        Catálogo de especies (opcional)
 ├── tests/
-│   ├── index.html          Casos de prueba en el navegador
+│   ├── correr-pruebas.bat  Ejecuta TODAS las pruebas (lógica + punta a punta)
+│   ├── e2e/                Pruebas de punta a punta (servidor y local)
+│   ├── index.html          Casos de lógica en el navegador
 │   ├── casos.js            Casos de la sección 12 y más
 │   └── run-node.js         Mismos casos desde la terminal
 └── docs/
+    ├── Manual_de_usuario_NexoRural.pdf
+    ├── manual/             Fuente del manual (HTML + capturas)
+    ├── diagrama-er.png / .svg
     ├── GUIA_BASE_DE_DATOS.md
+    ├── PUBLICAR_ONLINE.md
     ├── Analisis_informatico_control_carga_ganadera.docx
     └── capturas/
 ```
@@ -167,7 +187,17 @@ Todas las respuestas son JSON (`{ "ok": true, ... }` o `{ "ok": false, "mensaje"
 
 ## Pruebas
 
-- Reglas de negocio: `tests/index.html` en el navegador o `node tests/run-node.js` (19 casos, incluye todos los de la sección 12).
+**Todo junto, con un doble clic:** `tests\correr-pruebas.bat`
+
+1. **Reglas de negocio** (19 casos, incluye todos los de la sección 12 del análisis).
+2. **Punta a punta en modo servidor** (50 verificaciones): crea una base temporal, levanta un servidor PHP de prueba y recorre todo en un navegador sin ventana: instalación, cargas, exceso, correcciones, cierre, historial, administración, permisos del capataz, contraseña y protección CSRF.
+3. **Punta a punta en modo local** (29 verificaciones).
+
+Al terminar borra la base temporal: **nunca toca la base real**. Además, la prueba de servidor se niega a correr si la base ya tiene usuarios, y Apache bloquea esas páginas.
+
+Solo las reglas de negocio: `tests/index.html` en el navegador o `node tests/run-node.js`.
+
+La regla de capacidad también se probó con **concurrencia real en Apache**: 50 registros simultáneos de 300 kg sobre un camión de 3.000 kg → entraron exactamente 10.
 
 ## Base de datos
 

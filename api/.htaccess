@@ -1,5 +1,5 @@
 # Los archivos internos y la configuración no se pueden abrir desde el navegador.
-<FilesMatch "^(_.*|config)\.php$">
+<FilesMatch "^(_.*|config.*)\.php$">
     Require all denied
 </FilesMatch>
 Options -Indexes

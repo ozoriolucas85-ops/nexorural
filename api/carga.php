@@ -49,9 +49,18 @@ switch (accion()) {
         $id = exigirCargaAbierta($yo['id']);
         $cap = validarCapacidad($d['capacidad'] ?? null);
         $patente = limpiarPatente($d['patente'] ?? null);
+        // Se controla acá y también en la base (trigger), por si el hosting no permite triggers.
+        $pdo->beginTransaction();
+        $pdo->prepare('SELECT id FROM cargas WHERE id = ? FOR UPDATE')->execute([$id]);
+        if ($cap < acumulado($id)) {
+            $pdo->rollBack();
+            fallar('La capacidad no puede ser menor al peso ya cargado', 409, 'capacidad_menor');
+        }
         try {
             $pdo->prepare('UPDATE cargas SET capacidad_maxima_kg = ?, patente = ? WHERE id = ?')->execute([$cap, $patente, $id]);
+            $pdo->commit();
         } catch (PDOException $e) {
+            $pdo->rollBack();
             if ($m = mensajeTrigger($e)) fallar($m, 409, 'capacidad_menor');
             throw $e;
         }
@@ -139,14 +148,32 @@ switch (accion()) {
         $id = exigirCargaAbierta($yo['id']);
         $animal = (int)($d['id'] ?? 0);
         $eliminar = accion() === 'eliminar';
+        $pdo->beginTransaction();
+        $c = $pdo->prepare('SELECT capacidad_maxima_kg FROM cargas WHERE id = ? FOR UPDATE');
+        $c->execute([$id]);
+        $cap = (float)$c->fetchColumn();
+        $a = $pdo->prepare('SELECT peso_kg FROM animales_carga WHERE id = ? AND carga_id = ? AND eliminado = ?');
+        $a->execute([$animal, $id, $eliminar ? 0 : 1]);
+        $peso = $a->fetchColumn();
+        if ($peso === false) {
+            $pdo->rollBack();
+            fallar('No se encontró ese registro en la carga actual.', 404, 'no_encontrado');
+        }
+        // Restaurar = volver a subir el animal: también tiene que entrar en el camión.
+        if (!$eliminar && redondear(acumulado($id) + (float)$peso) > $cap) {
+            $pdo->rollBack();
+            fallar('Capacidad máxima superada', 409, 'excede', ['carga' => cargaComoJson($id)]);
+        }
         try {
-            $st = $pdo->prepare('UPDATE animales_carga SET eliminado = ? WHERE id = ? AND carga_id = ? AND eliminado = ?');
-            $st->execute([$eliminar ? 1 : 0, $animal, $id, $eliminar ? 0 : 1]);
+            $pdo->prepare('UPDATE animales_carga SET eliminado = ?, eliminado_en = ' . ($eliminar ? 'NOW()' : 'NULL') .
+                          ' WHERE id = ? AND carga_id = ?')
+                ->execute([$eliminar ? 1 : 0, $animal, $id]);
+            $pdo->commit();
         } catch (PDOException $e) {
+            $pdo->rollBack();
             if ($m = mensajeTrigger($e)) fallar($m, 409, 'excede', ['carga' => cargaComoJson($id)]);
             throw $e;
         }
-        if ($st->rowCount() === 0) fallar('No se encontró ese registro en la carga actual.', 404, 'no_encontrado');
         responder(['ok' => true, 'carga' => cargaComoJson($id)]);
 
     case 'rechazo':
@@ -168,7 +195,7 @@ switch (accion()) {
         $cerrar = accion() === 'cerrar';
         if ($cerrar && acumulado($id) <= 0) fallar('No se puede cerrar una carga vacía. Usá "Cancelar carga".', 409, 'vacia');
         $resumen = cargaComoJson($id);
-        $pdo->prepare('UPDATE cargas SET estado = ?, observaciones = COALESCE(?, observaciones) WHERE id = ?')
+        $pdo->prepare('UPDATE cargas SET estado = ?, cerrada_en = NOW(), observaciones = COALESCE(?, observaciones) WHERE id = ?')
             ->execute([$cerrar ? 'cerrada' : 'cancelada', textoCorto($d['observaciones'] ?? null, 255), $id]);
         responder(['ok' => true, 'carga' => null, 'finalizada' => cargaComoJson($id) ?: $resumen]);
 

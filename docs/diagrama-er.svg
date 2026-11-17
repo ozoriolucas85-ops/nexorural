@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+<defs>
+  <marker id="muchos" viewBox="0 0 20 20" refX="18" refY="10" markerWidth="16" markerHeight="16" orient="auto-start-reverse">
+    <path d="M18 2 L4 10 L18 18 M4 2 V18" fill="none" stroke="#0F172A" stroke-width="1.8"/></marker>
+  <marker id="uno" viewBox="0 0 20 20" refX="18" refY="10" markerWidth="16" markerHeight="16" orient="auto-start-reverse">
+    <path d="M10 2 V18 M15 2 V18" fill="none" stroke="#0F172A" stroke-width="1.8"/></marker>
+  <marker id="cero-uno" viewBox="0 0 24 20" refX="22" refY="10" markerWidth="18" markerHeight="16" orient="auto-start-reverse">
+    <circle cx="7" cy="10" r="4.5" fill="#fff" stroke="#0F172A" stroke-width="1.8"/><path d="M17 2 V18" stroke="#0F172A" stroke-width="1.8"/></marker>
+</defs>
+<rect width="1440" height="900" fill="#F8FAFC"/>
+<text x="40" y="40" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="24" font-weight="800" fill="#0F172A">NexoRural · Diagrama entidad-relación</text>
+<text x="1400" y="40" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="14" fill="#64748B" text-anchor="end">Base nexorural · MySQL / MariaDB · AGO Soluciones</text>
+<path d="M370 126.0 H462 V150.0 H555" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#uno)" marker-end="url(#muchos)"/>
+<text x="508" y="142.0" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" font-style="italic" fill="#475569" text-anchor="middle">realiza</text>
+<path d="M1070 126.0 H978 V174.0 H885" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#cero-uno)" marker-end="url(#muchos)"/>
+<text x="932" y="166.0" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" font-style="italic" fill="#475569" text-anchor="middle">transporta</text>
+<path d="M650 338 V420 H365 V480" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#uno)" marker-end="url(#muchos)"/>
+<text x="505" y="412" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" font-style="italic" fill="#475569" text-anchor="middle">contiene</text>
+<path d="M790 338 V440 H1085 V480" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#uno)" marker-end="url(#muchos)"/>
+<text x="940" y="432" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" font-style="italic" fill="#475569" text-anchor="middle">registra</text>
+<path d="M580 616.0 H555 V584.0 H530" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#uno)" marker-end="url(#muchos)"/>
+<path d="M870 616.0 H895 V584.0 H920" fill="none" stroke="#0F172A" stroke-width="1.6" marker-start="url(#cero-uno)" marker-end="url(#muchos)"/>
+<g><rect x="40" y="70" width="330" height="292" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M40 82 a12 12 0 0 1 12 -12 h306 a12 12 0 0 1 12 12 v32 h-330 z" fill="#0F172A"/>
+<text x="56" y="98" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">usuarios</text>
+<rect x="54" y="119" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="67" y="129.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="88" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="356" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="41" y="138" width="328" height="24" fill="#F8FAFC"/>
+<text x="88" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">nombre</text>
+<text x="356" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(80)</text>
+<rect x="54" y="167" width="26" height="14" rx="4" fill="#E2E8F0"/>
+<text x="67" y="177.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">UQ</text>
+<text x="88" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">usuario</text>
+<text x="356" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(40)</text>
+<rect x="41" y="186" width="328" height="24" fill="#F8FAFC"/>
+<text x="88" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">clave_hash</text>
+<text x="356" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(255)</text>
+<text x="88" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">rol</text>
+<text x="356" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">ENUM</text>
+<rect x="41" y="234" width="328" height="24" fill="#F8FAFC"/>
+<text x="88" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">activo</text>
+<text x="356" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT(1)</text>
+<text x="88" y="274.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">intentos_fallidos</text>
+<text x="356" y="274.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT</text>
+<rect x="41" y="282" width="328" height="24" fill="#F8FAFC"/>
+<text x="88" y="298.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">bloqueado_hasta</text>
+<text x="356" y="298.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME · NULL</text>
+<text x="88" y="322.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">ultimo_ingreso</text>
+<text x="356" y="322.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME · NULL</text>
+<rect x="41" y="330" width="328" height="24" fill="#F8FAFC"/>
+<text x="88" y="346.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">creado_en</text>
+<text x="356" y="346.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME</text>
+</g>
+<g><rect x="555" y="70" width="330" height="268" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M555 82 a12 12 0 0 1 12 -12 h306 a12 12 0 0 1 12 12 v32 h-330 z" fill="#0F172A"/>
+<text x="571" y="98" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">cargas</text>
+<rect x="569" y="119" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="582" y="129.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="603" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="871" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="556" y="138" width="328" height="24" fill="#F8FAFC"/>
+<rect x="569" y="143" width="26" height="14" rx="4" fill="#059669"/>
+<text x="582" y="153.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="603" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">usuario_id</text>
+<text x="871" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="569" y="167" width="26" height="14" rx="4" fill="#059669"/>
+<text x="582" y="177.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="603" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">camion_id</text>
+<text x="871" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT · NULL</text>
+<rect x="556" y="186" width="328" height="24" fill="#F8FAFC"/>
+<text x="603" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">patente</text>
+<text x="871" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(10) · NULL</text>
+<text x="603" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">capacidad_maxima_kg</text>
+<text x="871" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(9,2)</text>
+<rect x="556" y="234" width="328" height="24" fill="#F8FAFC"/>
+<text x="603" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">estado</text>
+<text x="871" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">ENUM</text>
+<text x="603" y="274.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">iniciada_en</text>
+<text x="871" y="274.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME</text>
+<rect x="556" y="282" width="328" height="24" fill="#F8FAFC"/>
+<text x="603" y="298.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">cerrada_en</text>
+<text x="871" y="298.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME · NULL</text>
+<text x="603" y="322.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">observaciones</text>
+<text x="871" y="322.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(255) · NULL</text>
+</g>
+<g><rect x="1070" y="70" width="330" height="196" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M1070 82 a12 12 0 0 1 12 -12 h306 a12 12 0 0 1 12 12 v32 h-330 z" fill="#0F172A"/>
+<text x="1086" y="98" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">camiones</text>
+<rect x="1084" y="119" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="1097" y="129.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="1118" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="1386" y="130.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="1071" y="138" width="328" height="24" fill="#F8FAFC"/>
+<rect x="1084" y="143" width="26" height="14" rx="4" fill="#E2E8F0"/>
+<text x="1097" y="153.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">UQ</text>
+<text x="1118" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">patente</text>
+<text x="1386" y="154.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(10)</text>
+<text x="1118" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">descripcion</text>
+<text x="1386" y="178.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(100) · NULL</text>
+<rect x="1071" y="186" width="328" height="24" fill="#F8FAFC"/>
+<text x="1118" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">capacidad_maxima_kg</text>
+<text x="1386" y="202.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(9,2)</text>
+<text x="1118" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">activo</text>
+<text x="1386" y="226.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT(1)</text>
+<rect x="1071" y="234" width="328" height="24" fill="#F8FAFC"/>
+<text x="1118" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">creado_en</text>
+<text x="1386" y="250.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME</text>
+</g>
+<g><rect x="200" y="480" width="330" height="268" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M200 492 a12 12 0 0 1 12 -12 h306 a12 12 0 0 1 12 12 v32 h-330 z" fill="#0F172A"/>
+<text x="216" y="508" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">animales_carga</text>
+<rect x="214" y="529" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="227" y="539.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="248" y="540.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="516" y="540.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="201" y="548" width="328" height="24" fill="#F8FAFC"/>
+<rect x="214" y="553" width="26" height="14" rx="4" fill="#059669"/>
+<text x="227" y="563.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="248" y="564.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">carga_id</text>
+<text x="516" y="564.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="214" y="577" width="26" height="14" rx="4" fill="#059669"/>
+<text x="227" y="587.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="248" y="588.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">tipo_animal_id</text>
+<text x="516" y="588.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">SMALLINT</text>
+<rect x="201" y="596" width="328" height="24" fill="#F8FAFC"/>
+<text x="248" y="612.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">caravana</text>
+<text x="516" y="612.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(20) · NULL</text>
+<text x="248" y="636.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">peso_kg</text>
+<text x="516" y="636.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(7,2)</text>
+<rect x="201" y="644" width="328" height="24" fill="#F8FAFC"/>
+<text x="248" y="660.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">fuera_de_rango</text>
+<text x="516" y="660.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT(1)</text>
+<text x="248" y="684.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">registrado_en</text>
+<text x="516" y="684.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME</text>
+<rect x="201" y="692" width="328" height="24" fill="#F8FAFC"/>
+<text x="248" y="708.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">eliminado</text>
+<text x="516" y="708.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT(1)</text>
+<text x="248" y="732.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">eliminado_en</text>
+<text x="516" y="732.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME · NULL</text>
+</g>
+<g><rect x="580" y="560" width="290" height="196" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M580 572 a12 12 0 0 1 12 -12 h266 a12 12 0 0 1 12 12 v32 h-290 z" fill="#0F172A"/>
+<text x="596" y="588" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">tipos_animal</text>
+<rect x="594" y="609" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="607" y="619.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="628" y="620.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="856" y="620.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">SMALLINT</text>
+<rect x="581" y="628" width="288" height="24" fill="#F8FAFC"/>
+<rect x="594" y="633" width="26" height="14" rx="4" fill="#E2E8F0"/>
+<text x="607" y="643.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">UQ</text>
+<text x="628" y="644.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">codigo</text>
+<text x="856" y="644.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(20)</text>
+<text x="628" y="668.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">nombre</text>
+<text x="856" y="668.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(40)</text>
+<rect x="581" y="676" width="288" height="24" fill="#F8FAFC"/>
+<text x="628" y="692.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">peso_min_ref_kg</text>
+<text x="856" y="692.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(7,2)</text>
+<text x="628" y="716.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">peso_max_ref_kg</text>
+<text x="856" y="716.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(7,2)</text>
+<rect x="581" y="724" width="288" height="24" fill="#F8FAFC"/>
+<text x="628" y="740.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">activo</text>
+<text x="856" y="740.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">TINYINT(1)</text>
+</g>
+<g><rect x="920" y="480" width="330" height="220" rx="12" fill="#fff" stroke="#CBD5E1" stroke-width="1.5"/>
+<path d="M920 492 a12 12 0 0 1 12 -12 h306 a12 12 0 0 1 12 12 v32 h-330 z" fill="#0F172A"/>
+<text x="936" y="508" font-family="'Roboto Mono', Consolas, monospace" font-size="15" font-weight="600" fill="#fff">intentos_rechazados</text>
+<rect x="934" y="529" width="26" height="14" rx="4" fill="#0F172A"/>
+<text x="947" y="539.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">PK</text>
+<text x="968" y="540.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="700" fill="#0F172A">id</text>
+<text x="1236" y="540.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="921" y="548" width="328" height="24" fill="#F8FAFC"/>
+<rect x="934" y="553" width="26" height="14" rx="4" fill="#059669"/>
+<text x="947" y="563.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="968" y="564.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">carga_id</text>
+<text x="1236" y="564.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">INT</text>
+<rect x="934" y="577" width="26" height="14" rx="4" fill="#059669"/>
+<text x="947" y="587.5" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="9.5" font-weight="700" fill="#fff" text-anchor="middle">FK</text>
+<text x="968" y="588.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">tipo_animal_id</text>
+<text x="1236" y="588.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">SMALLINT · NULL</text>
+<rect x="921" y="596" width="328" height="24" fill="#F8FAFC"/>
+<text x="968" y="612.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">peso_ingresado</text>
+<text x="1236" y="612.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">VARCHAR(30) · NULL</text>
+<text x="968" y="636.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">motivo</text>
+<text x="1236" y="636.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">ENUM</text>
+<rect x="921" y="644" width="328" height="24" fill="#F8FAFC"/>
+<text x="968" y="660.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">peso_acumulado_kg</text>
+<text x="1236" y="660.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DECIMAL(9,2)</text>
+<text x="968" y="684.5" font-family="'Roboto Mono', Consolas, monospace" font-size="12.5" font-weight="500" fill="#0F172A">registrado_en</text>
+<text x="1236" y="684.5" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#64748B" text-anchor="end">DATETIME</text>
+</g>
+<rect x="1070" y="290" width="330" height="140" rx="12" fill="#ECFDF5" stroke="#059669" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text x="1086" y="316" font-family="'Roboto Mono', Consolas, monospace" font-size="14" font-weight="600" fill="#047857">VISTA v_resumen_cargas</text>
+<text x="1086" y="342" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#065F46">peso_cargado_kg = SUM(peso_kg)</text>
+<text x="1086" y="362" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#065F46">disponible_kg = capacidad − cargado</text>
+<text x="1086" y="382" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#065F46">porcentaje_uso · cantidad_animales</text>
+<text x="1086" y="402" font-family="'Roboto Mono', Consolas, monospace" font-size="11.5" fill="#065F46">(solo animales no eliminados)</text>
+<rect x="40" y="790" width="1360" height="86" rx="12" fill="#fff" stroke="#CBD5E1"/>
+<text x="56" y="816" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#0F172A">Reglas en la base (triggers y CHECK)</text>
+<text x="56" y="836" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" fill="#334155">trg_animales_antes_insertar: si cargado + nuevo &gt; capacidad → "Capacidad máxima superada"; solo en cargas abiertas.</text>
+<text x="56" y="853" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" fill="#334155">trg_animales_antes_actualizar: revalida la capacidad al corregir o restaurar · trg_cargas_antes_actualizar: capacidad ≥ cargado.</text>
+<text x="56" y="870" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="12" fill="#334155">CHECK: 0 &lt; peso_kg ≤ 2.000 · 0 &lt; capacidad ≤ 60.000 · peso_min_ref &lt; peso_max_ref.</text>
+<text x="900" y="816" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="13" font-weight="700" fill="#0F172A">Notación</text>
+<path d="M940 846 H900" stroke="#0F172A" stroke-width="1.6" marker-end="url(#uno)"/>
+<text x="948" y="850" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="11.5" fill="#475569">uno (obligatorio)</text>
+<path d="M1110 846 H1070" stroke="#0F172A" stroke-width="1.6" marker-end="url(#cero-uno)"/>
+<text x="1118" y="850" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="11.5" fill="#475569">cero o uno (opcional)</text>
+<path d="M1280 846 H1240" stroke="#0F172A" stroke-width="1.6" marker-end="url(#muchos)"/>
+<text x="1288" y="850" font-family="'Plus Jakarta Sans', 'Segoe UI', sans-serif" font-size="11.5" fill="#475569">muchos</text>
+</svg>
