@@ -20,15 +20,16 @@
   /* ---------- Estado ---------- */
   var estado = cargarEstado();
   var pendienteConfirmar = null;  // clave tipo|peso que espera confirmación por rango
+  var ultimoRegistro = 0;         // momento del último alta (evita doble clic)
+  var ESPERA_DOBLE_CLIC = 1500;
   var ultimoEliminado = null;     // para "Deshacer"
   var timerMensaje = null;
 
   function cargarEstado() {
     try {
-      var e = JSON.parse(localStorage.getItem(CLAVE_CARGA));
-      if (e && Array.isArray(e.animales)) return e;
+      return L.normalizarEstado(JSON.parse(localStorage.getItem(CLAVE_CARGA)));
     } catch (err) { /* dato corrupto: empezar de cero */ }
-    return { capacidad: 0, patente: '', animales: [] };
+    return L.normalizarEstado(null);
   }
 
   function guardarEstado() {
@@ -144,6 +145,10 @@
 
   $('formAnimal').addEventListener('submit', function (e) {
     e.preventDefault();
+
+    // Doble clic: si se acaba de registrar y el campo quedó vacío, ignorar el 2.º envío
+    // para no tapar el mensaje verde con un error.
+    if (!$('peso').value.trim() && Date.now() - ultimoRegistro < ESPERA_DOBLE_CLIC) return;
     var datos = {
       tipo: tipoSeleccionado(),
       peso: $('peso').value,
@@ -169,7 +174,7 @@
         $('capacidad').focus();
       } else {
         mostrarMensaje('error', '<strong>' + esc(r.mensaje) + '</strong>' +
-          '<span>Elegí el tipo de animal e ingresá un peso numérico mayor a 0.</span>', true);
+          '<span>' + esc(r.detalle || '') + '</span>', true);
         marcarInvalidos(datos);
       }
       return;
@@ -194,10 +199,11 @@
     guardarEstado();
 
     pendienteConfirmar = null;
+    ultimoRegistro = Date.now();
     $('btnRegistrar').textContent = 'Registrar animal';
     $('btnRegistrar').classList.remove('btn--warn');
     mostrarMensaje('ok', '<strong>' + esc(r.mensaje) + '</strong>' +
-      '<span>' + L.TIPOS_ANIMAL[datos.tipo].nombre + ' · ' + kg(r.peso) +
+      '<span>' + L.nombreTipo(datos.tipo) + ' · ' + kg(r.peso) +
       '. Quedan ' + kg(r.disponible) + ' disponibles.</span>');
 
     $('peso').value = '';
@@ -208,7 +214,8 @@
   });
 
   function marcarInvalidos(datos) {
-    var pesoMal = isNaN(L.parsearPeso(datos.peso)) || L.parsearPeso(datos.peso) <= 0;
+    var pn = L.parsearPeso(datos.peso);
+    var pesoMal = isNaN(pn) || L.redondear(pn) <= 0 || pn > L.LIMITES.pesoAnimalMaxKg;
     $('peso').classList.toggle('is-invalid', pesoMal);
     $('especies').classList.toggle('is-invalid', !datos.tipo);
     if (!datos.tipo) document.querySelector('input[name="tipo"]').focus();
@@ -222,11 +229,14 @@
     if (!v.trim()) {
       p.textContent = 'Usá coma para decimales: 650,5 kg';
       p.className = 'field-help mono';
-    } else if (isNaN(n) || n <= 0) {
+    } else if (isNaN(n) || L.redondear(n) <= 0) {
       p.textContent = 'Valor no válido';
       p.className = 'field-help mono is-error';
+    } else if (n > L.LIMITES.pesoAnimalMaxKg) {
+      p.textContent = 'Demasiado alto: máximo ' + kg(L.LIMITES.pesoAnimalMaxKg);
+      p.className = 'field-help mono is-error';
     } else {
-      p.textContent = 'Se registrará: ' + kg(n);
+      p.textContent = 'Se registrará: ' + kg(L.redondear(n));
       p.className = 'field-help mono is-ok';
     }
   }
@@ -265,7 +275,7 @@
   $('mensaje').addEventListener('click', function (e) {
     if (e.target.id !== 'btnDeshacer' || !ultimoEliminado) return;
     var a = ultimoEliminado.animal;
-    if (L.sumarPesos(estado.animales) + a.peso > estado.capacidad) {
+    if (L.redondear(L.sumarPesos(estado.animales) + a.peso) > estado.capacidad) {
       mostrarMensaje('error', '<strong>' + L.MENSAJES.EXCEDE + '</strong><span>No se puede restaurar el registro.</span>', true);
       return;
     }
@@ -344,7 +354,7 @@
     if (cap > 0) {
       estado.animales.forEach(function (a, i) {
         var w = (a.peso / cap) * ANCHO_CAJA;
-        html += '<g class="seg seg--' + a.tipo + '"><title>' + (i + 1) + '. ' + L.TIPOS_ANIMAL[a.tipo].nombre + ' · ' + kg(a.peso) + '</title>' +
+        html += '<g class="seg seg--' + esc(a.tipo) + '"><title>' + (i + 1) + '. ' + esc(L.nombreTipo(a.tipo)) + ' · ' + kg(a.peso) + '</title>' +
           '<rect x="' + x.toFixed(2) + '" y="34" width="' + Math.max(w, 1).toFixed(2) + '" height="164"/>';
         if (w > 46) {
           html += '<text x="' + (x + w / 2).toFixed(2) + '" y="186" text-anchor="middle">' + Math.round(a.peso) + '</text>';
@@ -375,20 +385,20 @@
     var tbody = $('tablaAnimales');
     var acumulado = 0;
     tbody.innerHTML = estado.animales.map(function (a, i) {
-      acumulado += a.peso;
-      var t = L.TIPOS_ANIMAL[a.tipo];
+      acumulado = L.redondear(acumulado + a.peso);
+      var nombre = esc(L.nombreTipo(a.tipo));
       var hora = new Date(a.hora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
       var aviso = L.fueraDeRango(a.tipo, a.peso)
         ? ' <span class="tag tag--warn" title="Fuera del rango orientativo">revisado</span>' : '';
       return '<tr' + (a.id === idNuevo ? ' class="is-new"' : '') + '>' +
         '<td class="mono">' + String(i + 1).padStart(2, '0') + '</td>' +
-        '<td><span class="tag tag--' + a.tipo + '">' + t.nombre + '</span>' + aviso + '</td>' +
+        '<td><span class="tag tag--' + esc(a.tipo) + '">' + nombre + '</span>' + aviso + '</td>' +
         '<td class="mono">' + (a.caravana ? esc(a.caravana) : '<span class="muted">—</span>') + '</td>' +
         '<td class="num mono">' + kg(a.peso) + '</td>' +
-        '<td class="num mono muted">' + kg(Math.round(acumulado * 100) / 100) + '</td>' +
+        '<td class="num mono muted">' + kg(acumulado) + '</td>' +
         '<td class="mono muted">' + hora + '</td>' +
         '<td class="actions"><button type="button" class="icon-btn icon-btn--danger" data-eliminar="' + esc(a.id) + '" ' +
-        'title="Eliminar registro" aria-label="Eliminar ' + t.nombre + ' de ' + kg(a.peso) + '">' +
+        'title="Eliminar registro" aria-label="Eliminar ' + nombre + ' de ' + kg(a.peso) + '">' +
         '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></td>' +
         '</tr>';
     }).join('');
@@ -412,7 +422,7 @@
   $('btnImprimir').addEventListener('click', function () {
     var s = L.resumen(estado);
     var filas = estado.animales.map(function (a, i) {
-      return '<tr><td>' + (i + 1) + '</td><td>' + L.TIPOS_ANIMAL[a.tipo].nombre + '</td><td>' + (esc(a.caravana) || '—') +
+      return '<tr><td>' + (i + 1) + '</td><td>' + esc(L.nombreTipo(a.tipo)) + '</td><td>' + (esc(a.caravana) || '—') +
         '</td><td class="num">' + kg(a.peso) + '</td></tr>';
     }).join('');
     $('planilla').innerHTML =

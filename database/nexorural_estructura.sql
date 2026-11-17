@@ -17,6 +17,11 @@ CREATE DATABASE IF NOT EXISTS nexorural
 USE nexorural;
 
 SET NAMES utf8mb4;
+
+-- Topes de seguridad (iguales a LIMITES en js/logic.js):
+--   capacidad del camión: hasta 60.000 kg  ·  peso por animal: hasta 2.000 kg
+-- Los CHECK los hacen cumplir aunque MySQL no esté en modo estricto
+-- (XAMPP viene sin STRICT_TRANS_TABLES y recortaría los valores sin avisar).
 SET FOREIGN_KEY_CHECKS = 0;
 
 DROP VIEW    IF EXISTS v_resumen_cargas;
@@ -57,7 +62,7 @@ CREATE TABLE camiones (
   creado_en             DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_camiones_patente (patente),
-  CONSTRAINT ck_camiones_capacidad CHECK (capacidad_maxima_kg > 0)
+  CONSTRAINT ck_camiones_capacidad CHECK (capacidad_maxima_kg > 0 AND capacidad_maxima_kg <= 60000)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Flota de camiones';
 
@@ -101,7 +106,7 @@ CREATE TABLE cargas (
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT fk_cargas_camion  FOREIGN KEY (camion_id)  REFERENCES camiones (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
-  CONSTRAINT ck_cargas_capacidad CHECK (capacidad_maxima_kg > 0),
+  CONSTRAINT ck_cargas_capacidad CHECK (capacidad_maxima_kg > 0 AND capacidad_maxima_kg <= 60000),
   CONSTRAINT ck_cargas_cierre CHECK (cerrada_en IS NULL OR cerrada_en >= iniciada_en)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Sesiones de carga (un camión a la vez)';
@@ -128,7 +133,7 @@ CREATE TABLE animales_carga (
     ON UPDATE CASCADE ON DELETE CASCADE,
   CONSTRAINT fk_animales_tipo  FOREIGN KEY (tipo_animal_id) REFERENCES tipos_animal (id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
-  CONSTRAINT ck_animales_peso CHECK (peso_kg > 0),
+  CONSTRAINT ck_animales_peso CHECK (peso_kg > 0 AND peso_kg <= 2000),
   CONSTRAINT ck_animales_baja CHECK (eliminado IN (0,1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   COMMENT='Detalle de animales aceptados por carga';

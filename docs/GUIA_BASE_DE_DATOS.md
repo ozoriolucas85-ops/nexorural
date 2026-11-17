@@ -57,7 +57,7 @@ Flota. Es opcional en la versión 1 (la app permite escribir solo la patente).
 | id | INT PK AI | |
 | patente | VARCHAR(10) **única** | Mayúsculas, sin espacios |
 | descripcion | VARCHAR(100) | Marca, modelo, jaula |
-| capacidad_maxima_kg | DECIMAL(9,2) | > 0 |
+| capacidad_maxima_kg | DECIMAL(9,2) | > 0 y ≤ 60.000 |
 | activo | TINYINT(1) | |
 
 ### `tipos_animal`
@@ -81,7 +81,7 @@ Cada viaje o sesión de carga de **un** camión (RF-01).
 | usuario_id | FK → usuarios | Quién cargó |
 | camion_id | FK → camiones, NULL | Si se eligió un camión registrado |
 | patente | VARCHAR(10) NULL | Copia de lo que se escribió |
-| capacidad_maxima_kg | DECIMAL(9,2) | **Copia** de la capacidad de esta carga. Si después se edita el camión, el historial no cambia. |
+| capacidad_maxima_kg | DECIMAL(9,2) | > 0 y ≤ 60.000. **Copia** de la capacidad de esta carga. Si después se edita el camión, el historial no cambia. |
 | estado | ENUM abierta / cerrada / cancelada | Solo se cargan animales si está `abierta` |
 | iniciada_en / cerrada_en | DATETIME | `cerrada_en` se completa solo al cerrar |
 
@@ -94,7 +94,7 @@ Animales **aceptados** (RF-03, RF-08).
 | carga_id | FK → cargas | Si se borra la carga, se borran sus animales |
 | tipo_animal_id | FK → tipos_animal | |
 | caravana | VARCHAR(20) NULL | |
-| peso_kg | DECIMAL(7,2) | > 0 |
+| peso_kg | DECIMAL(7,2) | > 0 y ≤ 2.000 (tope contra errores de tipeo) |
 | fuera_de_rango | TINYINT(1) | 1 si el usuario confirmó un peso fuera del rango orientativo |
 | registrado_en | DATETIME | Automático |
 | eliminado | TINYINT(1) | **Baja lógica** (RF-09): no se borra la fila, se marca 1 |
@@ -138,7 +138,20 @@ try {
 }
 ```
 
-## 6. Consultas útiles
+## 6. Conexión desde PHP: activar modo estricto
+
+XAMPP trae MySQL **sin modo estricto**: si un valor no entra en la columna, lo **recorta sin avisar**
+(por ejemplo, 150.000 kg en `peso_kg` se guardaría como 99.999,99). Los CHECK de la estructura ya frenan
+los casos de peso y capacidad, pero conviene activar el modo estricto en cada conexión:
+
+```php
+$pdo = new PDO('mysql:host=localhost;dbname=nexorural;charset=utf8mb4', 'root', '', [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+]);
+$pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
+```
+
+## 7. Consultas útiles
 
 ```sql
 -- Animales de una carga (lo que muestra la tabla de la página)
@@ -155,7 +168,7 @@ INSERT INTO cargas (usuario_id, patente, capacidad_maxima_kg) VALUES (?, ?, ?);
 UPDATE cargas SET estado = 'cerrada' WHERE id = ?;
 ```
 
-## 7. Pruebas rápidas en la pestaña SQL
+## 8. Pruebas rápidas en la pestaña SQL
 
 Después de importar estructura + datos iniciales, y con un usuario creado:
 

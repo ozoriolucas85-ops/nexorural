@@ -195,7 +195,7 @@ svg { display: block; }
 }
 .sidebar .brand strong { color: #fff; }
 
-.side-nav { display: flex; flex-direction: column; gap: 4px; }
+.side-nav { display: flex; flex-direction: column; gap: 4px; flex: 1; } /* empuja la tarjeta y el usuario hacia abajo */
 .side-label {
   margin: 14px 12px 6px; font-size: .7rem; font-weight: 700;
   letter-spacing: .1em; text-transform: uppercase; color: var(--slate-500);
@@ -211,7 +211,6 @@ svg { display: block; }
 .side-nav a.is-active { background: var(--emerald-600); color: #fff; }
 
 .side-card {
-  margin-top: auto;
   padding: 16px; border-radius: 16px;
   background: linear-gradient(150deg, rgba(16, 185, 129, .22), rgba(16, 185, 129, .05));
   border: 1px solid rgba(16, 185, 129, .3);
@@ -326,7 +325,7 @@ svg { display: block; }
 .truck .wheel circle:first-child { fill: var(--slate-800); }
 .truck .wheel circle:last-child { fill: var(--slate-400); }
 
-.seg rect { stroke: #fff; stroke-width: 2; transition: opacity .2s; }
+.seg rect { fill: var(--slate-400); stroke: #fff; stroke-width: 2; transition: opacity .2s; } /* gris si el tipo no está en el catálogo */
 .seg:hover rect { opacity: .82; }
 .seg--vaca rect { fill: var(--c-vaca); }
 .seg--toro rect { fill: var(--c-toro); }
@@ -476,6 +475,7 @@ svg { display: block; }
 .tag {
   display: inline-block; padding: 3px 10px; border-radius: 999px;
   font-size: .78rem; font-weight: 700;
+  background: var(--slate-100); color: var(--slate-700);
 }
 .tag--vaca { background: var(--emerald-100); color: var(--emerald-700); }
 .tag--toro { background: #CCFBF1; color: #0F766E; }

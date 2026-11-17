@@ -116,6 +116,45 @@
         var r = L.registrarAnimal(estadoCon(0.3, [0.1]), { tipo: 'oveja', peso: '0,2' });
         return r.resultado.ok && L.resumen(r.estado).disponible === 0;
       }
+    },
+    {
+      nombre: 'Peso "0,001" (se redondea a 0) → rechazado como inválido',
+      fn: function () {
+        var inicial = estadoCon(5000, []);
+        var r = L.registrarAnimal(inicial, { tipo: 'oveja', peso: '0,001' });
+        return !r.resultado.ok && r.resultado.mensaje === 'Ingrese datos válidos' && r.estado === inicial;
+      }
+    },
+    {
+      nombre: 'Redondeo correcto: "650,555" → 650,56 y "1,005" → 1,01',
+      fn: function () {
+        var a = L.registrarAnimal(estadoCon(5000, []), { tipo: 'vaca', peso: '650,555' });
+        var b = L.registrarAnimal(estadoCon(5000, []), { tipo: 'oveja', peso: '1,005' });
+        return a.estado.animales[0].peso === 650.56 && b.estado.animales[0].peso === 1.01;
+      }
+    },
+    {
+      nombre: 'Topes: capacidad > 60.000 kg y animal > 2.000 kg → rechazados',
+      fn: function () {
+        return !L.validarCapacidad('60.000,01', 0).ok &&
+          L.validarCapacidad('60.000', 0).ok &&
+          !L.validarCapacidad('999999999', 0).ok &&
+          !L.evaluarRegistro(estadoCon(60000, []), { tipo: 'toro', peso: '2.000,01' }).ok &&
+          L.evaluarRegistro(estadoCon(60000, []), { tipo: 'toro', peso: '2.000' }).ok;
+      }
+    },
+    {
+      nombre: 'Estado guardado dañado o con tipo desconocido → se normaliza sin errores',
+      fn: function () {
+        var e = L.normalizarEstado({
+          capacidad: '5000',
+          animales: [{ id: 'a', tipo: 'caballo', peso: 500 }, { tipo: 'vaca', peso: 'x' }, null, { tipo: 'vaca', peso: -3 }]
+        });
+        return e.capacidad === 5000 && e.animales.length === 1 &&
+          L.nombreTipo('caballo') === 'Caballo' &&
+          L.normalizarEstado('basura').animales.length === 0 &&
+          L.normalizarEstado(null).capacidad === 0;
+      }
     }
   ];
 

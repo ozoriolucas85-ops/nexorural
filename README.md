@@ -35,6 +35,8 @@ La carga en curso queda guardada en el navegador, así que no se pierde si se re
 | RF-08 | Listar registros | Tabla «Animales cargados» con acumulado |
 | RF-09 | Eliminar registro | Botón de papelera, recalcula todo, con opción *Deshacer* |
 
+Topes de seguridad contra errores de tipeo: capacidad hasta **60.000 kg** y animal hasta **2.000 kg** (también controlados en la base de datos).
+
 Extras: advertencia si el peso está fuera del rango orientativo de la especie (hay que confirmar), caravana opcional, patente, barra que pasa a ámbar al 85 % y a rojo al llenarse, diseño adaptable a celular/tablet/PC y planilla imprimible.
 
 ## Estructura del proyecto

@@ -26,6 +26,15 @@
    * Rangos ORIENTATIVOS (sección 6). No son límites rígidos:
    * solo disparan una advertencia para revisar el dato.
    */
+  /*
+   * Topes de seguridad para detectar errores de tipeo (un cero de más).
+   * Coinciden con los CHECK de la base de datos.
+   */
+  var LIMITES = {
+    capacidadMaxKg: 60000,  // ningún camión jaula supera las 60 t
+    pesoAnimalMaxKg: 2000   // ningún animal de las especies cargadas supera 2 t
+  };
+
   var TIPOS_ANIMAL = {
     vaca: { nombre: 'Vaca', min: 500, max: 800 },
     toro: { nombre: 'Toro', min: 600, max: 1100 },
@@ -60,9 +69,13 @@
     return isFinite(n) ? n : NaN;
   }
 
-  /** Redondea a 2 decimales para evitar errores de coma flotante (0.1 + 0.2). */
+  /**
+   * Redondea a 2 decimales sin errores de coma flotante.
+   * Se usa notación exponencial porque 650.555 * 100 da 65055.49999…
+   */
   function redondear(n) {
-    return Math.round(n * 100) / 100;
+    var r = Number(Math.round(Number(n + 'e2')) + 'e-2');
+    return r === 0 ? 0 : r; // evita -0
   }
 
   function sumarPesos(animales) {
@@ -72,8 +85,15 @@
   /** RF-01: valida la capacidad máxima configurada. */
   function validarCapacidad(valor, pesoAcumulado) {
     var cap = parsearPeso(valor);
+    if (!isNaN(cap)) cap = redondear(cap);
     if (isNaN(cap) || cap <= 0) {
       return { ok: false, mensaje: 'Ingrese una capacidad válida mayor a 0 kg' };
+    }
+    if (cap > LIMITES.capacidadMaxKg) {
+      return {
+        ok: false,
+        mensaje: 'La capacidad no puede superar ' + formatearKg(LIMITES.capacidadMaxKg) + '. Revisá si sobra un cero.'
+      };
     }
     if (pesoAcumulado && cap < pesoAcumulado) {
       return {
@@ -81,7 +101,7 @@
         mensaje: 'La capacidad no puede ser menor al peso ya cargado (' + formatearKg(pesoAcumulado) + ')'
       };
     }
-    return { ok: true, capacidad: redondear(cap) };
+    return { ok: true, capacidad: cap };
   }
 
   /** Indica si el peso está fuera del rango orientativo de la especie. */
@@ -100,16 +120,31 @@
    */
   function evaluarRegistro(estado, datos) {
     var peso = parsearPeso(datos.peso);
+    // Redondear ANTES de validar: "0,001" queda en 0 y debe rechazarse.
+    if (!isNaN(peso)) peso = redondear(peso);
     var tipoValido = !!(datos.tipo && TIPOS_ANIMAL[datos.tipo]);
 
     if (!estado.capacidad || estado.capacidad <= 0) {
       return { ok: false, motivo: 'sin_capacidad', mensaje: 'Configure primero la capacidad máxima del camión' };
     }
     if (!tipoValido || isNaN(peso) || peso <= 0) {
-      return { ok: false, motivo: 'invalido', mensaje: MENSAJES.INVALIDO };
+      return {
+        ok: false,
+        motivo: 'invalido',
+        mensaje: MENSAJES.INVALIDO,
+        detalle: !isNaN(peso) && peso <= 0 && parsearPeso(datos.peso) > 0
+          ? 'El peso mínimo es 0,01 kg.'
+          : 'Elegí el tipo de animal e ingresá un peso numérico mayor a 0.'
+      };
     }
-
-    peso = redondear(peso);
+    if (peso > LIMITES.pesoAnimalMaxKg) {
+      return {
+        ok: false,
+        motivo: 'invalido',
+        mensaje: MENSAJES.INVALIDO,
+        detalle: 'Ningún animal puede pesar más de ' + formatearKg(LIMITES.pesoAnimalMaxKg) + '. Revisá si sobra un cero.'
+      };
+    }
     var acumulado = sumarPesos(estado.animales);
     var propuesto = redondear(acumulado + peso);
 
@@ -133,6 +168,39 @@
       propuesto: propuesto,
       disponible: redondear(estado.capacidad - propuesto),
       advertenciaRango: fueraDeRango(datos.tipo, peso)
+    };
+  }
+
+  /** Nombre visible de un tipo; si no está en el catálogo, muestra el código. */
+  function nombreTipo(tipo) {
+    if (TIPOS_ANIMAL[tipo]) return TIPOS_ANIMAL[tipo].nombre;
+    var t = String(tipo || 'Desconocido');
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  /**
+   * Limpia un estado leído del almacenamiento (puede venir de una versión vieja
+   * o estar dañado). Descarta registros sin peso válido y nunca lanza errores.
+   */
+  function normalizarEstado(e) {
+    var vacio = { capacidad: 0, patente: '', animales: [] };
+    if (!e || typeof e !== 'object' || !Array.isArray(e.animales)) return vacio;
+    var cap = Number(e.capacidad);
+    var animales = e.animales.filter(function (a) {
+      return a && typeof a === 'object' && typeof a.peso === 'number' && isFinite(a.peso) && a.peso > 0;
+    }).map(function (a, i) {
+      return {
+        id: a.id ? String(a.id) : 'r' + i + '-' + Date.now(),
+        tipo: String(a.tipo || ''),
+        peso: redondear(a.peso),
+        caravana: typeof a.caravana === 'string' ? a.caravana : '',
+        hora: a.hora || new Date().toISOString()
+      };
+    });
+    return {
+      capacidad: isFinite(cap) && cap > 0 ? redondear(cap) : 0,
+      patente: typeof e.patente === 'string' ? e.patente : '',
+      animales: animales
     };
   }
 
@@ -186,6 +254,10 @@
 
   return {
     MENSAJES: MENSAJES,
+    LIMITES: LIMITES,
+    nombreTipo: nombreTipo,
+    normalizarEstado: normalizarEstado,
+    redondear: redondear,
     TIPOS_ANIMAL: TIPOS_ANIMAL,
     parsearPeso: parsearPeso,
     validarCapacidad: validarCapacidad,
