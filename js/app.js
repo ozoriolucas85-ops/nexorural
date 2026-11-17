@@ -49,7 +49,7 @@
     carga = c;
     render();
     document.body.classList.remove('is-cargando');
-    if (!carga) $('capacidad').focus();
+    if (!carga) $('capacidad').focus({ preventScroll: true });
   }).catch(function (e) {
     document.body.classList.remove('is-cargando');
     mostrarMensaje('error', '<strong>' + esc(e.mensaje || 'Error al cargar los datos') + '</strong>', true);
