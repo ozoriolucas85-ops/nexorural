@@ -71,7 +71,7 @@
     <p class="sub">Cómo registrar los animales, controlar la capacidad del camión y administrar el sistema, paso a paso.</p>
     <div class="foto"><img src="img/carga.png" alt="Panel de carga"></div>
   </div>
-  <div class="pie"><span>Versión 2.0</span><span>Desarrollado por <strong>AGO Soluciones</strong></span></div>
+  <div class="pie"><span>Versión 2.1 · Noviembre 2026</span><span>Desarrollado por <strong>AGO Soluciones</strong></span></div>
 </div>
 
 <!-- ============ ÍNDICE ============ -->
@@ -118,12 +118,16 @@
 <!-- ============ 2 ============ -->
 <section>
   <h2>2. Cómo abrir el sistema</h2>
-  <p>NexoRural funciona en una computadora con <strong>XAMPP</strong> (Apache y MySQL encendidos).</p>
-  <ul>
-    <li><strong>En esa computadora:</strong> abrí el navegador y escribí <code>http://localhost/nexorural/</code></li>
-    <li><strong>En un celular o tablet</strong> conectado al mismo wifi: usá la dirección que aparece en <em>Administración → Acceso desde celulares</em> (por ejemplo <code>http://192.168.1.18/nexorural/</code>). Ver la sección 16.</li>
-  </ul>
+  <p>NexoRural está disponible de dos formas. Son <strong>independientes</strong>: cada una tiene su propia base de datos y lo que se carga en una no aparece en la otra.</p>
+  <table>
+    <tr><th style="width:24%"></th><th>En internet <span style="color:var(--green)">(recomendado)</span></th><th>En la computadora (XAMPP)</th></tr>
+    <tr><td><strong>Dirección</strong></td><td>La que les pasa el administrador (empieza con <code>https://</code>)</td><td><code>http://localhost/nexorural/</code></td></tr>
+    <tr><td><strong>Desde dónde</strong></td><td>Cualquier celular, tablet o computadora con internet</td><td>Esa computadora, o celulares en el mismo wifi</td></tr>
+    <tr><td><strong>Necesita</strong></td><td>Solo internet. No hace falta tener ninguna PC encendida</td><td>La computadora encendida, con Apache y MySQL prendidos en XAMPP</td></tr>
+    <tr><td><strong>Para qué</strong></td><td>El uso de todos los días en el campo</td><td>Probar cambios o seguir trabajando si un día falla el hosting</td></tr>
+  </table>
   <div class="ojo"><strong>Escribí la dirección tal cual</strong>, sin punto ni coma al final. <code>http://localhost/nexorural,</code> (con coma) da error 404.</div>
+  <div class="nota">La primera vez que se abre la dirección de internet puede aparecer unos segundos una pantalla de verificación del hosting («Checking your browser»). Es normal: después carga sola.</div>
   <p>Arriba a la derecha de cada pantalla aparece el estado de la conexión:</p>
   <table>
     <tr><td style="width:28%"><strong style="color:var(--green)">● Conectado</strong></td><td>Los datos se guardan en la base de datos y se comparten entre todos los equipos.</td></tr>
@@ -138,7 +142,7 @@
   <figure class="angosta"><img src="img/instalar.png" alt=""><figcaption>Pantalla de primer ingreso</figcaption></figure>
   <ol>
     <li>Escribí tu <strong>nombre y apellido</strong>.</li>
-    <li>Elegí un <strong>usuario</strong> para ingresar (letras y números, sin espacios; por ejemplo <code>maria</code>).</li>
+    <li>Elegí un <strong>usuario</strong> para ingresar: puede ser un nombre (<code>maria.lopez</code>) o tu email (<code>maria@gmail.com</code>). Sin espacios, acentos ni ñ (ver sección 14).</li>
     <li>Elegí una <strong>contraseña</strong> de al menos 6 caracteres y repetila.</li>
     <li>Tocá <strong>Crear administrador</strong>. Entrás directo al panel.</li>
   </ol>
@@ -191,7 +195,7 @@
   <ol>
     <li>Tocá la <strong>categoría</strong> (Vaca, Toro, Oveja y las que agregue el administrador). Debajo de cada una figura su rango habitual.</li>
     <li>Escribí el <strong>peso real medido</strong> en kg. Debajo aparece cómo se va a registrar: <code>Se registrará: 650,5 kg</code>.</li>
-    <li>Opcional: la <strong>caravana</strong> del animal.</li>
+    <li>Opcional: la <strong>caravana</strong> del animal (el código de la chapita que lleva en la oreja, por ejemplo <code>AR 0123 4567</code>). Sirve para saber exactamente qué animal subió a cada camión; si no la usan, dejala vacía.</li>
     <li>Tocá <strong>Registrar animal</strong> (o Enter).</li>
   </ol>
   <h3>Cómo escribir el peso</h3>
@@ -281,6 +285,7 @@
   <h3>Usuarios</h3>
   <ul>
     <li><strong>Crear</strong>: nombre, usuario, rol (capataz o administrador) y contraseña inicial. Pasale la contraseña a la persona.</li>
+    <li>El <strong>usuario</strong> puede ser un nombre (<code>pedro.gomez</code>) o un email (<code>pedro@gmail.com</code>): de 3 a 40 caracteres, con letras, números, punto, guion, guion bajo o @. <strong>Sin espacios, acentos ni ñ</strong>: si hay alguno, el sistema dice exactamente cuál sobra.</li>
     <li><strong>Clave</strong>: asigna una contraseña nueva si alguien se la olvidó (también lo desbloquea).</li>
     <li><strong>Desactivar / Activar</strong>: un usuario desactivado no puede ingresar, pero sus cargas quedan en el historial. No podés desactivarte a vos mismo.</li>
   </ul>
@@ -296,25 +301,51 @@
   <h2>15. Cambiar mi contraseña</h2>
   <p>Cualquier usuario puede hacerlo con el botón <strong>🔑</strong> de su tarjeta (abajo a la izquierda): contraseña actual, la nueva (mínimo 6 caracteres) y repetirla.</p>
   <figure class="angosta"><img src="img/clave.png" alt=""><figcaption>Cambiar mi contraseña</figcaption></figure>
+  <h3>Contraseñas seguras</h3>
+  <ul>
+    <li>La versión de internet la puede abrir cualquiera: usá una contraseña que <strong>no uses en otro lado</strong>.</li>
+    <li>Evitá las comunes (<code>admin123</code>, <code>12345678</code>, tu nombre). Una frase es más segura y fácil de recordar: <code>VacaNegra-Camion-2026!</code></li>
+    <li>Si el administrador de contraseñas de Google avisa «contraseña hackeada», no significa que entraron al sistema: esa contraseña aparece en listas públicas de contraseñas filtradas. Cambiala igual.</li>
+  </ul>
 </section>
 
 <!-- ============ 16 ============ -->
 <section class="salto">
   <h2>16. Usar NexoRural desde el celular</h2>
+  <p>Funciona igual en <strong>Android y iPhone</strong>.</p>
+  <h3>Con la versión de internet (lo más simple)</h3>
   <ol>
-    <li><strong>Una sola vez</strong>, en la computadora con XAMPP: doble clic en <code>scripts\habilitar-celulares.bat</code> y aceptar el permiso de Windows. Permite la entrada desde el wifi local (desde internet sigue bloqueado).</li>
-    <li>En <strong>Administración → Acceso desde celulares</strong> está la dirección. Tocá <strong>Copiar dirección</strong> o <strong>Enviar por WhatsApp</strong>.</li>
-    <li>En el celular, conectado al <strong>mismo wifi</strong>, abrí esa dirección e ingresá con tu usuario.</li>
-    <li>Desde el menú del navegador, <strong>Agregar a la pantalla de inicio</strong>: queda como una app con su ícono.</li>
+    <li>En <strong>Administración → Acceso desde celulares</strong> está la dirección de internet del sistema. Tocá <strong>Enviar por WhatsApp</strong> para mandársela a cada capataz.</li>
+    <li>En el celular, abrí el link e ingresá con tu usuario. Funciona con datos móviles o cualquier wifi.</li>
+    <li>Dejalo como app en la pantalla de inicio:
+      <ul>
+        <li><strong>Android (Chrome):</strong> menú <strong>⋮</strong> → <strong>Agregar a la pantalla de inicio</strong>.</li>
+        <li><strong>iPhone (Safari):</strong> botón <strong>Compartir</strong> (cuadrado con flecha) → <strong>Agregar a inicio</strong>.</li>
+      </ul>
+    </li>
   </ol>
   <figure class="celular"><img src="img/celular.png" alt=""><figcaption>Panel en el celular: lo primero es registrar</figcaption></figure>
-  <div class="ojo">La computadora con XAMPP tiene que estar <strong>encendida</strong>. NexoRural no necesita internet, solo el wifi del campo. La dirección de la computadora la asigna el router y puede cambiar: si un día el celular no entra, revisala en <em>Administración</em>.</div>
+  <h3>Con la versión de la computadora (solo en el mismo wifi)</h3>
+  <ol>
+    <li><strong>Una sola vez</strong>, en la computadora con XAMPP: doble clic en <code>scripts\habilitar-celulares.bat</code> y aceptar el permiso de Windows.</li>
+    <li>La dirección (por ejemplo <code>http://192.168.1.18/nexorural/</code>) aparece en <em>Administración → Acceso desde celulares</em>.</li>
+  </ol>
+  <div class="ojo">En este caso la computadora tiene que estar <strong>encendida</strong> con XAMPP, y el celular en el <strong>mismo wifi</strong>. La dirección la asigna el router y puede cambiar: si un día el celular no entra, revisala en <em>Administración</em>.</div>
 </section>
 
 <!-- ============ 17 ============ -->
 <section>
   <h2>17. Respaldos de la información</h2>
-  <p>Todos los días a las <strong>20:00</strong> se guarda una copia completa de la base en <code>Documentos\NexoRural-respaldos</code> (si la computadora estaba apagada, se hace al encenderla). Se conservan los últimos 30 días.</p>
+  <h3>Versión de internet</h3>
+  <p>El respaldo se hace a mano. Conviene <strong>una vez por semana</strong>:</p>
+  <ol>
+    <li>Entrá al panel del hosting (InfinityFree) → <strong>MySQL Databases</strong> → <strong>Admin</strong> (se abre phpMyAdmin).</li>
+    <li>Pestaña <strong>Exportar</strong> → <strong>Continuar</strong>. Se descarga un archivo <code>.sql</code>.</li>
+    <li>Guardalo en Google Drive o en un pendrive, con la fecha en el nombre.</li>
+  </ol>
+  <p>Para volver a un respaldo: phpMyAdmin → <strong>Importar</strong> ese archivo.</p>
+  <h3>Versión de la computadora</h3>
+  <p>Todos los días a las <strong>20:00</strong> se guarda una copia completa de la base en <code>Documentos\NexoRural-respaldos</code> (si la computadora estaba apagada, se hace al encenderla). Se conservan los últimos 30 días. <strong>Este respaldo automático es solo de la base de la computadora</strong>, no de la de internet.</p>
   <table>
     <tr><th style="width:38%">Archivo (carpeta <code>scripts</code>)</th><th>Para qué</th></tr>
     <tr><td><code>respaldo.bat</code></td><td>Hacer un respaldo en el momento.</td></tr>
@@ -330,7 +361,7 @@
   <table>
     <tr><th style="width:34%">Qué pasa</th><th>Qué hacer</th></tr>
     <tr><td>Error <strong>404</strong> al abrir la página</td><td>Revisá la dirección: <code>http://localhost/nexorural/</code> sin coma ni punto al final.</td></tr>
-    <tr><td>«No se pudo conectar con el servidor»</td><td>En el panel de XAMPP encendé <strong>Apache</strong> y <strong>MySQL</strong>.</td></tr>
+    <tr><td>«No se pudo conectar con el servidor» (versión de la computadora)</td><td>En el panel de XAMPP encendé <strong>Apache</strong> y <strong>MySQL</strong>.</td></tr>
     <tr><td>MySQL no arranca en XAMPP («puerto 3306 en uso»)</td><td>Hay otro MySQL abierto. Cerrá los paneles de XAMPP repetidos (dejá uno solo) o reiniciá la computadora y volvé a encenderlo.</td></tr>
     <tr><td>«La base de datos "nexorural" no existe»</td><td>Importá <code>database\nexorural_estructura.sql</code> en phpMyAdmin (ver <code>docs\GUIA_BASE_DE_DATOS.md</code>).</td></tr>
     <tr><td>El celular no abre la página</td><td>Mismo wifi que la PC · ejecutar <code>habilitar-celulares.bat</code> · revisar la dirección en Administración · la red de Windows tiene que estar como <em>Privada</em>.</td></tr>
@@ -338,7 +369,11 @@
     <tr><td>El <strong>único administrador</strong> se olvidó la contraseña</td><td>En la computadora del servidor, doble clic en <code>scripts\restablecer-clave.bat</code>: muestra los usuarios y permite poner una contraseña nueva.</td></tr>
     <tr><td>«Demasiados intentos fallidos»</td><td>Esperá 5 minutos, o que un administrador le asigne una clave nueva.</td></tr>
     <tr><td>Indicador <strong>Modo local</strong></td><td>La página se abrió con doble clic, sin servidor. Abrila desde <code>http://localhost/nexorural/</code>.</td></tr>
-    <tr><td>Se ven datos viejos o la página no cambia</td><td>Recargá con <strong>Ctrl + F5</strong>.</td></tr>
+    <tr><td>Se ven datos viejos o la página no cambia</td><td>Recargá con <strong>Ctrl + F5</strong>. En el celular, cerrá la pestaña y volvé a abrir la página.</td></tr>
+    <tr><td>La página de internet tarda o muestra «Checking your browser»</td><td>Es la protección del hosting gratuito. Esperá unos segundos; si no carga, recargá.</td></tr>
+    <tr><td>En internet: «MySQL rechazó el usuario o la contraseña», «No se pudo conectar al servidor MySQL» o «falta el archivo api/config.local.php»</td><td>Los datos de conexión del hosting están mal o falta el archivo. Revisá <code>api/config.local.php</code> en el File Manager (ver <code>docs\PUBLICAR_ONLINE.md</code>).</td></tr>
+    <tr><td>Cargué algo en internet y no aparece en la computadora (o al revés)</td><td>Es normal: son dos bases separadas (sección 2).</td></tr>
+    <tr><td>«El usuario no puede tener …» al crear una cuenta</td><td>Sacá el carácter que indica el mensaje (espacio, acento o ñ).</td></tr>
   </table>
 </section>
 
@@ -355,6 +390,9 @@
     <tr><td><strong>La capacidad no puede ser menor al peso ya cargado</strong></td><td>Se intentó bajar la capacidad por debajo de lo que ya está en el camión.</td></tr>
     <tr><td><strong>Ya tenés una carga abierta</strong></td><td>Cerrá o cancelá la carga actual antes de empezar otra.</td></tr>
     <tr><td><strong>Tu sesión expiró</strong></td><td>Volvé a ingresar con tu usuario.</td></tr>
+    <tr><td><strong>La carga no está abierta</strong></td><td>Esa carga ya se cerró o canceló: no se le pueden agregar animales.</td></tr>
+    <tr><td><strong>El usuario no puede tener «…»</strong></td><td>El nombre de usuario tiene un carácter no permitido (espacio, acento o ñ).</td></tr>
+    <tr><td><strong>Demasiados intentos fallidos</strong></td><td>Usuario bloqueado 5 minutos por contraseña incorrecta repetida.</td></tr>
   </table>
   <p style="margin-top:30px;color:var(--muted);text-align:center">NexoRural · Manual de usuario · AGO Soluciones</p>
 </section>
