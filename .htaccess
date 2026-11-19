@@ -15,3 +15,12 @@ RedirectMatch 404 /tests/.*\.(ps1|bat)$
 
 # Tipo correcto para el manifiesto de la app.
 AddType application/manifest+json .webmanifest
+
+# Que el navegador SIEMPRE pregunte si hay una versión nueva de la página
+# (si no cambió, responde "304 sin cambios" y no se vuelve a descargar).
+# Evita quedarse con JavaScript viejo después de una actualización.
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|js|css|webmanifest)$">
+        Header set Cache-Control "no-cache"
+    </FilesMatch>
+</IfModule>
