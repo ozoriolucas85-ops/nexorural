@@ -94,10 +94,23 @@ function db(): PDO
             ]
         );
     } catch (PDOException $e) {
-        if ((int)$e->getCode() === 1049) {
-            fallar('La base de datos "' . $CONFIG['db_name'] . '" no existe. Importá database/nexorural_estructura.sql en phpMyAdmin.', 503, 'sin_base');
+        // Mensajes concretos según el problema (nunca se muestra la contraseña).
+        $codigo = (int)$e->getCode();
+        $tieneLocal = is_file(__DIR__ . '/config.local.php');
+        $esLocal = in_array($CONFIG['db_host'], ['localhost', '127.0.0.1'], true);
+        if ($codigo === 1049) {
+            fallar('La base de datos "' . $CONFIG['db_name'] . '" no existe. Revisá que db_name sea exactamente el nombre de la base (con el prefijo, si el hosting le pone uno).', 503, 'sin_base');
         }
-        fallar('No se pudo conectar a MySQL. ¿Está encendido en XAMPP?', 503, 'sin_conexion');
+        if ($codigo === 1044 || $codigo === 1045) {
+            fallar('MySQL rechazó el usuario o la contraseña (usuario usado: "' . $CONFIG['db_user'] . '"). Revisá db_user y db_pass en api/config.local.php.', 503, 'sin_conexion');
+        }
+        if (!$tieneLocal && !$esLocal) {
+            fallar('No se pudo conectar a MySQL.', 503, 'sin_conexion');
+        }
+        if (!$tieneLocal) {
+            fallar('No se pudo conectar a MySQL en esta computadora (¿está encendido en XAMPP?). Si esto es un hosting, falta el archivo api/config.local.php.', 503, 'sin_conexion');
+        }
+        fallar('No se pudo conectar al servidor MySQL "' . $CONFIG['db_host'] . '". Revisá db_host en api/config.local.php (en un hosting casi nunca es localhost).', 503, 'sin_conexion');
     }
     // Modo estricto: si un valor no entra en la columna, error (no recorte silencioso).
     $pdo->exec("SET SESSION sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO'");
