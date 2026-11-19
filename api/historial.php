@@ -10,6 +10,27 @@ require __DIR__ . '/_cargas.php';
 
 exigirSesion();
 
+/*
+ * Mismo cálculo que la vista v_resumen_cargas, escrito acá para no depender de ella:
+ * algunos hostings gratuitos (InfinityFree) no permiten crear vistas.
+ */
+const RESUMEN_CARGAS_SQL = '
+    SELECT c.id AS carga_id, c.estado,
+           COALESCE(c.patente, cm.patente) AS patente,
+           u.nombre AS operador,
+           c.capacidad_maxima_kg,
+           COALESCE(SUM(a.peso_kg), 0) AS peso_cargado_kg,
+           c.capacidad_maxima_kg - COALESCE(SUM(a.peso_kg), 0) AS disponible_kg,
+           ROUND(COALESCE(SUM(a.peso_kg), 0) * 100 / c.capacidad_maxima_kg, 2) AS porcentaje_uso,
+           COUNT(a.id) AS cantidad_animales,
+           c.iniciada_en, c.cerrada_en
+      FROM cargas c
+      JOIN usuarios u ON u.id = c.usuario_id
+      LEFT JOIN camiones cm ON cm.id = c.camion_id
+      LEFT JOIN animales_carga a ON a.carga_id = c.id AND a.eliminado = 0
+     GROUP BY c.id, c.estado, c.patente, cm.patente, u.nombre,
+              c.capacidad_maxima_kg, c.iniciada_en, c.cerrada_en';
+
 switch (accion()) {
 
     case 'listar':
@@ -32,7 +53,7 @@ switch (accion()) {
                        disponible_kg, porcentaje_uso, cantidad_animales,
                        DATE_FORMAT(iniciada_en, "%Y-%m-%dT%H:%i:%s") AS iniciada_en,
                        DATE_FORMAT(cerrada_en,  "%Y-%m-%dT%H:%i:%s") AS cerrada_en
-                  FROM v_resumen_cargas'
+                  FROM (' . RESUMEN_CARGAS_SQL . ') AS v_resumen_cargas'
             . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
             . ' ORDER BY iniciada_en DESC, carga_id DESC LIMIT 500';
         $st = db()->prepare($sql);

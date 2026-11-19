@@ -37,7 +37,10 @@ $utf8 = New-Object Text.UTF8Encoding $false
 [IO.File]::WriteAllText((Join-Path $destino 'nexorural_estructura_hosting.sql'), $sql, $utf8)
 
 # 3. Variante sin triggers (PHP igual controla todas las reglas)
+#    Tambien sin la vista: hostings como InfinityFree no permiten crear vistas
+#    (el historial hace el mismo calculo en su propia consulta).
 $sinTriggers = $sql -replace '(?s)DELIMITER \$\$.*?DELIMITER ;\s*', "-- (Triggers omitidos: este hosting no los permite. PHP controla las mismas reglas.)`n"
+$sinTriggers = $sinTriggers -replace '(?s)CREATE VIEW v_resumen_cargas AS.*?;\s*\r?\n', "-- (Vista omitida: el historial hace el mismo calculo en PHP.)`n"
 [IO.File]::WriteAllText((Join-Path $destino 'nexorural_estructura_hosting_sin_triggers.sql'), $sinTriggers, $utf8)
 
 Write-Host ''
