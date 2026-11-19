@@ -278,6 +278,22 @@
     };
   }
 
+  /**
+   * Nombre de usuario: 3 a 40 caracteres; letras sin acentos, números y . _ - @
+   * (se aceptan emails). Devuelve null si es válido o el motivo concreto.
+   */
+  function validarUsuario(u) {
+    u = String(u || '');
+    if (u.length < 3) return 'El usuario debe tener al menos 3 caracteres.';
+    if (u.length > 40) return 'El usuario puede tener como máximo 40 caracteres.';
+    if (/\s/.test(u)) return 'El usuario no puede tener espacios.';
+    var malo = u.match(/[^A-Za-z0-9._@-]/);
+    if (malo) {
+      return 'El usuario no puede tener «' + malo[0] + '». Usá letras sin acentos ni ñ, números, punto, guion, guion bajo o @.';
+    }
+    return null;
+  }
+
   function formatearKg(n) {
     return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 2 }).format(n) + ' kg';
   }
@@ -286,6 +302,7 @@
     MENSAJES: MENSAJES,
     LIMITES: LIMITES,
     nombreTipo: nombreTipo,
+    validarUsuario: validarUsuario,
     configurarTipos: configurarTipos,
     tiposActivos: tiposActivos,
     plural: plural,

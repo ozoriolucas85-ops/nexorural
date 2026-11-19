@@ -188,8 +188,8 @@ function validarDatosUsuario(array $d): array
     $usuario = trim((string)($d['usuario'] ?? ''));
     $clave = (string)($d['clave'] ?? '');
     if (mb_strlen($nombre) < 2 || mb_strlen($nombre) > 80) fallar('Ingresá el nombre y apellido.');
-    if (!preg_match('/^[A-Za-z0-9._-]{3,40}$/', $usuario)) {
-        fallar('El usuario debe tener de 3 a 40 caracteres: letras, números, punto, guion o guion bajo.');
+    if (!preg_match('/^[A-Za-z0-9._@-]{3,40}$/', $usuario)) {
+        fallar('El usuario debe tener de 3 a 40 caracteres, sin espacios: letras sin acentos ni ñ, números, punto, guion, guion bajo o @.');
     }
     if (strlen($clave) < 6) fallar('La contraseña debe tener al menos 6 caracteres.');
     return [$nombre, $usuario, $clave];

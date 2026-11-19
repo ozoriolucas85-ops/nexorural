@@ -69,9 +69,8 @@
     if (instalando) {
       var nombre = $('nombre').value.trim();
       if (nombre.length < 2) return mostrarError('Ingresá tu nombre y apellido.', $('nombre'));
-      if (!/^[A-Za-z0-9._-]{3,40}$/.test(usuario)) {
-        return mostrarError('Usuario: de 3 a 40 letras o números, sin espacios.', $('usuario'));
-      }
+      var errUsuario = window.NexoLogic.validarUsuario(usuario);
+      if (errUsuario) return mostrarError(errUsuario, $('usuario'));
       if (clave.length < 6) return mostrarError('La contraseña debe tener al menos 6 caracteres.', $('clave'));
       if (clave !== $('clave2').value) return mostrarError('Las contraseñas no coinciden.', $('clave2'));
       return enviar(store.instalar({ nombre: nombre, usuario: usuario, clave: clave }));

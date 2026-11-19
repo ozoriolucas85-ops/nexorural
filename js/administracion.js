@@ -145,7 +145,8 @@
       rol: $('uRol').value
     };
     if (d.nombre.length < 2) return mensaje('formMensaje', 'error', 'Ingresá el nombre y apellido.');
-    if (!/^[A-Za-z0-9._-]{3,40}$/.test(d.usuario)) return mensaje('formMensaje', 'error', 'Usuario: de 3 a 40 letras o números, sin espacios.');
+    var errUsuario = L.validarUsuario(d.usuario);
+    if (errUsuario) return mensaje('formMensaje', 'error', errUsuario);
     if (d.clave.length < 6) return mensaje('formMensaje', 'error', 'La contraseña debe tener al menos 6 caracteres.');
     store.crearUsuario(d).then(function () {
       mensaje('formMensaje', 'ok', 'Usuario "' + d.usuario + '" creado.');
