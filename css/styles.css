@@ -775,3 +775,21 @@ input[type="date"]::-webkit-date-and-time-value { text-align: left; }
   input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: max(16px, 1em); }
   .edit-form select, .edit-form input { font-size: 16px; }
 }
+
+/* iPhone: los campos de fecha tienen un ancho mínimo propio y se salían de la tarjeta */
+input[type="date"] {
+  width: 100%; max-width: 100%; min-width: 0;
+  -webkit-min-logical-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value { min-height: 1.45em; }
+.filters .field { min-width: 0; }
+
+/* Filtros del historial en celular: Estado arriba, Desde | Hasta lado a lado, botones abajo */
+@media (max-width: 560px) {
+  .filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+  .filters > .field:first-child, .filters > .btn-row { grid-column: 1 / -1; }
+  .filters .seg-ctrl { width: 100%; }
+  .filters .seg-ctrl button { flex: 1; }
+  .filters input[type="date"] { padding-left: 10px; padding-right: 10px; }
+  .filters .btn-row .btn { flex: 1; }
+}
