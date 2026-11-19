@@ -22,8 +22,9 @@ if ($pendientes) {
     Write-Host 'Atencion: hay cambios sin guardar en Git. El paquete usa la ultima version guardada (commit).' -ForegroundColor Yellow
 }
 
-if (Test-Path $destino) { Remove-Item $destino -Recurse -Force }
-New-Item -ItemType Directory -Path $destino | Out-Null
+# Vaciar la carpeta (no borrarla: puede estar abierta en el Explorador)
+if (-not (Test-Path $destino)) { New-Item -ItemType Directory -Path $destino | Out-Null }
+Get-ChildItem $destino -Force | Remove-Item -Recurse -Force
 
 # 1. Archivos de la pagina (lo marcado con export-ignore en .gitattributes queda afuera)
 git archive --format=zip -o (Join-Path $destino 'nexorural-web.zip') HEAD
