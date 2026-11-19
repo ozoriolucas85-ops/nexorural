@@ -2,7 +2,7 @@
 
 **AGO Soluciones**
 
-Para tener un link que funcione desde cualquier lugar (por ejemplo, para mostrar el proyecto) hace falta un **hosting con PHP 8 y MySQL/MariaDB**. Hay opciones gratuitas, como InfinityFree o 000webhost, y pagas. Los pasos son casi iguales en todos; los nombres de los menús pueden variar.
+Para tener un link que funcione desde cualquier lugar (por ejemplo, para mostrar el proyecto) hace falta un **hosting con PHP 8 y MySQL/MariaDB**. Hay opciones gratuitas, como InfinityFree, y pagas. (En InfinityFree usá directamente el SQL **sin triggers** del paso 3: no los permite.) Los pasos son casi iguales en todos; los nombres de los menús pueden variar.
 
 > **Antes de publicar:** NexoRural maneja usuarios y contraseñas. Usá un hosting con **HTTPS** (el candadito en la dirección); la mayoría lo da gratis. Sin HTTPS, las contraseñas viajan sin cifrar.
 
