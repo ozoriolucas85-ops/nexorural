@@ -12,7 +12,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="NexoRural">
   <link rel="stylesheet" href="css/fonts.css">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body class="app is-cargando">
 
@@ -91,8 +91,8 @@
             <button type="button" data-estado="cancelada">Canceladas</button>
           </div>
         </div>
-        <label class="field"><span>Desde</span><input type="date" id="fDesde"></label>
-        <label class="field"><span>Hasta</span><input type="date" id="fHasta"></label>
+        <label class="field"><span>Desde</span><span class="date-box"><input type="date" id="fDesde"></span></label>
+        <label class="field"><span>Hasta</span><span class="date-box"><input type="date" id="fHasta"></span></label>
         <div class="btn-row">
           <button type="button" class="btn btn--ghost" id="btnLimpiar">Limpiar</button>
           <button type="button" class="btn btn--ghost" id="btnCsvLista">

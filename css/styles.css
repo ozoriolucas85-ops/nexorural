@@ -793,3 +793,34 @@ input[type="date"]::-webkit-date-and-time-value { min-height: 1.45em; }
   .filters input[type="date"] { padding-left: 10px; padding-right: 10px; }
   .filters .btn-row .btn { flex: 1; }
 }
+
+/* Fechas del historial: el borde lo dibuja la caja y el campo va adentro sin borde ni relleno.
+   Así, aunque Safari (iPhone) le imponga un ancho propio al campo, nunca se sale de la tarjeta. */
+.field > span.date-box {
+  display: flex; align-items: center; min-width: 0; overflow: hidden;
+  min-height: 48px; padding: 0 12px;
+  border: 1.5px solid var(--slate-200); border-radius: var(--radius-sm); background: var(--bg);
+  font-size: 1rem; font-weight: 400; color: var(--slate-900);
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.field > span.date-box:focus-within { border-color: var(--emerald-500); background: #fff; box-shadow: 0 0 0 4px rgba(16, 185, 129, .14); }
+.field .date-box input[type="date"],
+.filters .date-box input[type="date"] {
+  display: block; flex: 1 1 auto; width: 100%; max-width: 100%; min-width: 0; min-height: 0;
+  margin: 0; padding: 10px 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  font-family: var(--mono); font-size: 16px; color: inherit;
+}
+.field .date-box input[type="date"]:focus { box-shadow: none; background: transparent; }
+
+/* Selector de estado: 4 opciones que entren en el celular */
+@media (max-width: 560px) {
+  .filters .seg-ctrl { display: flex; }
+  .filters .seg-ctrl button { padding: 8px 4px; font-size: .8rem; min-width: 0; }
+}
+@media (max-width: 560px) {
+  .filters .seg-ctrl { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+  .filters .seg-ctrl button { padding: 9px 6px; font-size: .86rem; }
+}
+@media (max-width: 380px) {
+  .filters { grid-template-columns: minmax(0, 1fr); }
+}
